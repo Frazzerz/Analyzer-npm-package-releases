@@ -1,0 +1,6 @@
+__pycache__/
+analysis_results/
+other_versions/
+repos/
+list_pkg.json
+log.txt
