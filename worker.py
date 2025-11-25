@@ -43,7 +43,7 @@ def analyze_single_package(item):
 
     CSVReporter().save_metrics(metrics_file, metrics)
     CSVReporter().save_red_flags(flags_file, flags)
-    TextReporter().generate_summary(summary_file, flags)
+    TextReporter().generate_summary(summary_file, flags, package)
 
     # Append save messages to the package file
     with open(pkg_output_file, 'a', encoding='utf-8') as f:

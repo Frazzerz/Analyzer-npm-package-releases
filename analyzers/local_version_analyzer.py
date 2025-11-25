@@ -96,9 +96,10 @@ class LocalVersionAnalyzer:
         if (package_dir / 'package').exists():
             actual_package_dir = package_dir / 'package'
 
-        js_files = self.file_handler.get_js_files(actual_package_dir)
+        #js_files = self.file_handler.get_js_files(actual_package_dir)
+        files = self.file_handler.get_all_files(actual_package_dir)
 
-        for file_path in js_files:
+        for file_path in files:
             try:
                 rel_path = self.local_version_manager.normalize_local_file_path(
                     str(file_path.relative_to(actual_package_dir))

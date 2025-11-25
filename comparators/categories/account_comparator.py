@@ -21,11 +21,11 @@ class AccountComparator:
         else:
             # Existing file
             return {
-                'npm_new_maintainer': curr.npm_maintainers - prev.npm_maintainers > 0,
+                'npm_new_maintainer': False, #Fa troppo rumore   #curr.npm_maintainers - prev.npm_maintainers > 0,
                 'npm_awakening_inactive_maintainer': False,                                                     #TODO
                 'npm_new_maintainer_published_first_time_releases': False,                                      #TODO
                 'npm_ownership_change': False,                                                                  #TODO
-                'github_new_contributors': curr.github_contributors - prev.github_contributors > 0,
+                'github_new_contributors': False, #Fa troppo rumore  #curr.github_contributors - prev.github_contributors > 0,
                 'github_awakening_inactive_contributors': False,                                                #TODO
                 'github_new_contributors_published_first_time_releases': False,                                 #TODO
                 'github_ownership_change': False                                                                #TODO

@@ -54,9 +54,10 @@ class GitVersionAnalyzer:
         normalized_version = version[1:] if version.startswith('v') else version   # Remove initial 'v' if present
 
         metrics_list = []
-        js_files = self.file_handler.get_js_files(package_dir)
+        #js_files = self.file_handler.get_js_files(package_dir)
+        files = self.file_handler.get_all_files(package_dir)
 
-        for file_path in js_files:
+        for file_path in files:
             try:
                 rel_path = str(file_path.relative_to(package_dir))
                 content = self.file_handler.read_file(file_path)

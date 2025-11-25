@@ -21,7 +21,6 @@ class CodeAnalyzer:
         metrics.update(self.payload_analyzer.analyze(content))
         metrics.update(self.data_exfiltration_analyzer.analyze(content))
         metrics.update(self.cryptojacking_analyzer.analyze(content))
-        
         metrics.update(self.account_analyzer.analyze(package_info))
         metrics.update(self.release_analyzer.analyze(release_info))
         

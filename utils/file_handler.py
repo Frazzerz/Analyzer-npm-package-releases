@@ -21,6 +21,14 @@ class FileHandler:
         return list(directory.rglob('*.js'))
     
     @staticmethod
+    def get_all_files(directory: Path) -> List[Path]:
+        """Find all files in directory (recursive) excluding .git and node_modules directories"""
+        exclude = {'.git', 'node_modules', '.editorconfig', '.npmrc', '.gitattributes', '.github', 'license'}
+        return [file for file in directory.rglob('*') 
+                if file.is_file() 
+                and not any(part in exclude for part in file.parts)]
+    
+    @staticmethod
     def read_file(file_path: Path) -> str:
         """Read file content"""
         try:

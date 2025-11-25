@@ -19,11 +19,11 @@ class TextReporter:
                 if field not in TextReporter._IGNORE_FIELDS and value]
 
     @staticmethod
-    def generate_summary(output_path: Path, changes: List[RedFlagChanges]) -> None:
+    def generate_summary(output_path: Path, changes: List[RedFlagChanges], package: str) -> None:
         with open(output_path, "w", encoding="utf-8") as f:
 
             f.write("=" * 70 + "\n")
-            f.write("SUMMARY RED FLAGS - Analyzer NPM package releases \n")
+            f.write(f"SUMMARY RED FLAGS - Analyzer NPM package releases - Package: {package}\n")
             f.write("=" * 70 + "\n\n")
 
             if not changes:

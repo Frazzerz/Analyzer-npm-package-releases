@@ -10,8 +10,8 @@ class ReleaseComparator:
         # New file
         if prev is None:
             return {
-                'npm_before_github': curr.npm_release_date < curr.github_release_date,
-                'hash_mismatch_between_npm_and_github': curr.hash_npm != curr.hash_github,
+                'npm_before_github': False, #TODO: Uncomment when ready #curr.npm_release_date < curr.github_release_date,
+                'hash_mismatch_between_npm_and_github': False, #TODO: Uncomment when ready #curr.hash_npm != curr.hash_github,
                 'anomalous_time': False,
                 'package_reactivation': False,
                 'dependency_issues_keywords': False                                                                           # TODO
@@ -19,9 +19,9 @@ class ReleaseComparator:
         else:
             # Existing file
             return {
-                'npm_before_github': curr.npm_release_date < curr.github_release_date,
-                'hash_mismatch_between_npm_and_github': curr.hash_npm != curr.hash_github,
+                'npm_before_github': False, #TODO: Uncomment when ready #curr.npm_release_date < curr.github_release_date,
+                'hash_mismatch_between_npm_and_github': False, #TODO: Uncomment when ready #curr.hash_npm != curr.hash_github,
                 'anomalous_time': False,                                                                                      # TODO, da pensarci
-                'package_reactivation': (curr.npm_release_date - prev.npm_release_date) > timedelta(days=365*2),    # More than 2 years gap
+                'package_reactivation': False, #TODO: Uncomment when ready #(curr.npm_release_date - prev.npm_release_date) > timedelta(days=365*2),    # More than 2 years gap
                 'dependency_issues_keywords': False                                                                           # TODO
             }

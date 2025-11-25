@@ -9,8 +9,9 @@ class FileMetrics:
     file_path: str
     
     # EVASION TECHNIQUES
-    is_obfuscated: bool
-    obfuscation_type: str
+    is_transformed: bool
+    transformed_type: str
+    suspicious_patterns_count: int
     new_code_obfuscated_differently: bool
     timing_delays: int
     dynamic_imports: int

@@ -20,7 +20,6 @@ class CryptojackingAnalyzer:
     ]
 
     def analyze(self, content: str) -> Dict:
-        """Analyze content for cryptojacking and wallet theft indicators"""
         
         metrics = {
             'crypto_addresses': 0,

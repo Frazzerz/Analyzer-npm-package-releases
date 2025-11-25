@@ -12,6 +12,7 @@ class RedFlagChanges:
     obfuscation_introduced: bool
     obfuscation_class_changed: bool
     new_code_obfuscated_differently: bool
+    hex_suspicious_patterns_increase_significant: bool
     timing_delays_introduced: bool
     dynamic_imports_introduced: bool
     env_detection_introduced: bool
