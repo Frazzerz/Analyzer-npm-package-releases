@@ -4,22 +4,25 @@ from typing import Dict
 class CryptojackingAnalyzer:
     """Analyze cryptojacking & wallet theft techniques"""
 
-    CRYPTO_PATTERNS = {                                                                 # From deofuscated malware example, 7 - ( 390 )- 760, numeri miei, poi verranno cancellati
-        'ethereum': re.compile(r'\b0x[a-fA-F0-9]{40}\b'),                                                                   # 7 - 70 - 130
-        'bitcoinLegacy': re.compile(r'\b1[a-km-zA-HJ-NP-Z1-9]{25,34}\b'),                                                   # 0 - 45 - 85
-        'bitcoinSegwit': re.compile(r'\b(3[a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{11,71})\b'),    # 0 - 40 - 80
-        'tron': re.compile(r'((?<!\w)[T][1-9A-HJ-NP-Za-km-z]{33})'),                                                        # 0 - 40 - 80
-        'bch': re.compile(r'bitcoincash:[qp][a-zA-Z0-9]{41}'),                                                              # 0 - 40 - 80
-        'ltc': re.compile(r'(?<!\w)ltc1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{11,71}\b'),                                       # 0 - 0 - 0
-        'ltc2': re.compile(r'(?<!\w)[mlML][a-km-zA-HJ-NP-Z1-9]{25,34}'),                                                    # 0 - 40 - 80
-        'solana': re.compile(r'((?<!\w)[4-9A-HJ-NP-Za-km-z][1-9A-HJ-NP-Za-km-z]{32,44})'),                                  # 0 - 114 - 223
-        'solana2': re.compile(r'((?<!\w)[3][1-9A-HJ-NP-Za-km-z]{35,44})'),                                                  # 0 - 1 - 2
-        'solana3': re.compile(r'((?<!\w)[1][1-9A-HJ-NP-Za-km-z]{35,44})')                                                   # 0 - 0 - 0
+    CRYPTO_PATTERNS = {                                     # From deofuscated malware example                              # 7 - 760, numeri miei, poi verranno cancellati
+        'ethereum': re.compile(r'\b0x[a-fA-F0-9]{40}\b'),                                                                   # 7 - 130
+        'bitcoinLegacy': re.compile(r'\b1[a-km-zA-HJ-NP-Z1-9]{25,34}\b'),                                                   # 0 - 85
+        'bitcoinSegwit': re.compile(r'\b(3[a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{11,71})\b'),    # 0 - 80
+        'tron': re.compile(r'((?<!\w)[T][1-9A-HJ-NP-Za-km-z]{33})'),                                                        # 0 - 80
+        'bch': re.compile(r'bitcoincash:[qp][a-zA-Z0-9]{41}'),                                                              # 0 - 80
+        'ltc': re.compile(r'(?<!\w)ltc1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{11,71}\b'),                                       # 0 - 0
+        'ltc2': re.compile(r'(?<!\w)[mlML][a-km-zA-HJ-NP-Z1-9]{25,34}'),                                                    # 0 - 80
+        'solana': re.compile(r'((?<!\w)[4-9A-HJ-NP-Za-km-z][1-9A-HJ-NP-Za-km-z]{32,44})'),                                  # 0 - 223
+        'solana2': re.compile(r'((?<!\w)[3][1-9A-HJ-NP-Za-km-z]{35,44})'),                                                  # 0 - 2
+        'solana3': re.compile(r'((?<!\w)[1][1-9A-HJ-NP-Za-km-z]{35,44})')                                                   # 0 - 0
+        # \b \b word boundaries, find exact word
+        # (?<!\w) ensures the preceding character is not a word character
+        # [number] specific starting characters (number) for certain crypto addresses
     }
 
     CRYPTOCURRENCY_NAMES = {
         'ethereum': {
-            'pattern': re.compile(r'\bethereum\b|\beth\b', re.IGNORECASE),                                # \b \b word boundaries, find exact word
+            'pattern': re.compile(r'\bethereum\b|\beth\b', re.IGNORECASE),
             'symbols': ['ethereum', 'eth']
         },
         'bitcoin': {
@@ -56,10 +59,11 @@ class CryptojackingAnalyzer:
         'wallet_connect_detect': re.compile(
             r'(window\.)?ethereum\.request',
             re.IGNORECASE
-        ), # variable spaces: \s+ (at least one space), \s* (zero or more spaces)
-           # ['"] can be either single or double quotes
-           # !==? -> != and !==
-           # ()? is optional group
+        ), 
+        # variable spaces: \s+ (at least one space), \s* (zero or more spaces)
+        # ['"] can be either single or double quotes
+        # !==? -> != and !==
+        # ()? is optional group
     }
 
     # eth_sendTransaction, solana_signTransaction, solana_signAndSendTransaction are functions used to send crypto to someone, sign operations on dApps and authorize smart contracts
