@@ -37,7 +37,11 @@ class FileMetrics:
     
     # CRYPTOJACKING & WALLET THEFT
     crypto_addresses: int
+    list_crypto_addresses: List[str]
     wallet_detection: int
+    cryptocurrency_name: int
+    replaced_crypto_addresses: int
+    hook_provider: int
 
     # ACCOUNT COMPROMISE
     npm_maintainers: int

@@ -5,6 +5,7 @@ from models import *
 from utils import NPMClient, FileHandler
 from .git_version_analyzer import GitVersionAnalyzer
 from .local_version_analyzer import LocalVersionAnalyzer  
+from .deobfuscated_version_analyzer import DeobfuscatedAnalyzer
 from .code_analyzer import CodeAnalyzer
 
 class PackageAnalyzer:
@@ -17,6 +18,7 @@ class PackageAnalyzer:
         self.include_local = include_local
         self.git_analyzer = GitVersionAnalyzer(self.code_analyzer, self.file_handler)
         self.local_analyzer = LocalVersionAnalyzer(self.code_analyzer, self.file_handler, local_versions_dir)
+        self.deobfuscated_analyzer = DeobfuscatedAnalyzer(self.code_analyzer, self.file_handler)
     
     def analyze_package(self, package_name: str) -> Tuple[List[FileMetrics], List[RedFlagChanges]]:
         """Analyze all releases of a package"""
@@ -38,5 +40,12 @@ class PackageAnalyzer:
             local_metrics, local_changes = self.local_analyzer.analyze_local_versions(package_name)
             all_metrics.extend(local_metrics)
             all_changes.extend(local_changes)
+
+        #If deobfuscated files were created during analysis, analyze them as well
+        deobf_dir = Path('deobfuscated_files') / package_name
+        if deobf_dir.exists() and deobf_dir.is_dir():
+            deobf_metrics, deobf_changes = self.deobfuscated_analyzer.analyze_deobfuscated_versions(package_name, deobf_dir)
+            all_metrics.extend(deobf_metrics)
+            all_changes.extend(deobf_changes)
         
         return all_metrics, all_changes

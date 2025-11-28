@@ -13,8 +13,8 @@ class ReleaseAnalyzer:
     
     def analyze(self, release_info: Dict) -> Dict:
         
-        # For local versions
-        if not release_info or release_info == "local":
+        # For local versions or deobfuscated versions
+        if not release_info or release_info == "local" or release_info == "deobfuscated":
             return self._empty_metrics()
         
         package_name = release_info.get('package_name', '')

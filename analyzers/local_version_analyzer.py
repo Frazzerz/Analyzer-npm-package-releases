@@ -27,7 +27,6 @@ def version_key(tag: str):
 
     return (parts, 0 if is_local else 1, tag)  # local before others
 
-
 class LocalVersionAnalyzer:
     """Manages the analysis of local versions."""
     def __init__(self, code_analyzer: CodeAnalyzer, file_handler: FileHandler, local_versions_dir: str):
@@ -67,7 +66,7 @@ class LocalVersionAnalyzer:
         print(f"Analyzing {len(self._local_versions)} local versions")
         all_metrics = []
         all_changes = []
-        prev_metrics = None
+        prev_metrics = []
 
         sorted_versions = sorted(self._local_versions.keys(), key=version_key)
 
@@ -78,9 +77,9 @@ class LocalVersionAnalyzer:
                 curr_metrics = self._analyze_version(package_name, version, package_dir)
                 all_metrics.extend(curr_metrics)
                 print(f"    Analyzed {len(curr_metrics)} files")
-                if prev_metrics:
-                    changes = self.version_comparator.compare_versions(prev_metrics, curr_metrics)
-                    all_changes.extend(changes)
+
+                changes = self.version_comparator.compare_versions(prev_metrics, curr_metrics)
+                all_changes.extend(changes)
 
                 prev_metrics = curr_metrics
             except Exception as e:
@@ -108,7 +107,9 @@ class LocalVersionAnalyzer:
                 
                 package_info = {
                     'name': package_name,
-                    'version': version      # Local version indicator included
+                    'version': version,      # Local version indicator included
+                    'file_name': rel_path,
+                    'info': "local"
                 }
 
                 file_metrics = self.code_analyzer.analyze_file(

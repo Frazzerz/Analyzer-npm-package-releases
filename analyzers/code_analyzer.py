@@ -17,7 +17,7 @@ class CodeAnalyzer:
         """Analyze a single file and return all metrics"""
         metrics = {}
         
-        metrics.update(self.evasion_analyzer.analyze(content))
+        metrics.update(self.evasion_analyzer.analyze(content, package_info))
         metrics.update(self.payload_analyzer.analyze(content))
         metrics.update(self.data_exfiltration_analyzer.analyze(content))
         metrics.update(self.cryptojacking_analyzer.analyze(content))

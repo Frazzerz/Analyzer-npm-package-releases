@@ -27,7 +27,7 @@ class GitVersionAnalyzer:
         
         all_metrics = []
         all_changes = []
-        prev_metrics = None
+        prev_metrics = []
         repo_path = Path(repo.working_tree_dir)
 
         for i, tag in enumerate(tags, 1):
@@ -38,9 +38,8 @@ class GitVersionAnalyzer:
                 all_metrics.extend(curr_metrics)
                 print(f"    Analyzed {len(curr_metrics)} files")
 
-                if prev_metrics:
-                    changes = self.version_comparator.compare_versions(prev_metrics, curr_metrics)
-                    all_changes.extend(changes)
+                changes = self.version_comparator.compare_versions(prev_metrics, curr_metrics)
+                all_changes.extend(changes)
 
                 prev_metrics = curr_metrics
             except Exception as e:
@@ -66,7 +65,9 @@ class GitVersionAnalyzer:
                 package_info = {
                     'name': package_name,
                     'version': normalized_version,
-                    'git_repo_path': str(package_dir)
+                    'git_repo_path': str(package_dir),
+                    'file_name': rel_path,
+                    'info': "git"
                 }
                 release_info = {
                     'package_name': package_name,

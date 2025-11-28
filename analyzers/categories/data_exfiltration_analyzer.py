@@ -33,5 +33,10 @@ class DataExfiltrationAnalyzer:
         for domain_pattern in self.SUSPICIOUS_DOMAINS:
             metrics['suspicious_domains'] += len(re.findall(domain_pattern, content))
         '''
-
+        
+        # TODO
+        # Ovveride di fetch - fetch = async function (..._0x1ae7ec) {
+        # Override di XMLHttpRequest - XMLHttpRequest.prototype.open = function 
+        #URL_PATTERN = re.compile(r'https?://[^\s]+')
+        
         return metrics

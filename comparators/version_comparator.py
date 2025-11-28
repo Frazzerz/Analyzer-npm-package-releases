@@ -37,7 +37,7 @@ class VersionComparator:
             change = RedFlagChanges(
                 package=curr.package,
                 file_path=curr.file_path,
-                version_from=prev.version if prev else "new",
+                version_from=prev.version if prev else "new_file",
                 version_to=curr.version,
                 **red_flags
             )

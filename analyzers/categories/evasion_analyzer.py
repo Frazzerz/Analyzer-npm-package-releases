@@ -1,6 +1,6 @@
 import re
 from typing import Dict
-
+from utils import Deobfuscator
 class EvasionAnalyzer:
     """Analyze evasion techniques"""
 
@@ -12,7 +12,7 @@ class EvasionAnalyzer:
         r'parseInt\(.*?\)',         # ParseInt with hexadecimals, ex. parseInt(_0x
     }
 
-    def analyze(self, content: str) -> Dict:
+    def analyze(self, content: str, package_info: Dict) -> Dict:
         
         metrics = {
             'is_transformed': False,
@@ -26,17 +26,19 @@ class EvasionAnalyzer:
             'execution_time': 0,
         }
         
-        is_transformed, transformed_type, suspicious_patterns_count = self._detect_obfuscation(content)
+        is_transformed, transformed_type, suspicious_patterns_count = self._detect_obfuscation(content, package_info['info'])
+        if transformed_type == 'Obfuscated' and package_info['file_name'].endswith('.js'):                              # Only deobfuscate JS files
+            self.deobfuscate_code(content, package_info['name'], package_info['version'], package_info['file_name'])
         metrics['is_transformed'] = is_transformed
         metrics['transformed_type'] = transformed_type
         metrics['suspicious_patterns_count'] = suspicious_patterns_count
         
         return metrics
     
-    def _detect_obfuscation(self, content: str) -> tuple[bool, str, int]:
+    def _detect_obfuscation(self, content: str, info: str) -> tuple[bool, str, int]:
         """Detect if code is obfuscated and what type.
-            trasformed_type: None or Obfuscated (For now)"""
-        
+            trasformed_type: None, Obfuscated or Deobfuscated (For now)"""
+
         if not content.strip():
             return False, "none", 0
 
@@ -51,7 +53,14 @@ class EvasionAnalyzer:
             if len(line.strip()) > 3000:                            # Threshold for long lines
                 long_lines_count += 1
 
+        if info == 'deobfuscated':
+            return True, "Deobfuscated", len(all_matches)
+
         if len(all_matches) > 15 and long_lines_count > 0:           # Threshold for obfuscation detection
-            return True, "obfuscated", len(all_matches)
+            return True, "Obfuscated", len(all_matches)
 
         return False, "none", len(all_matches)
+    
+    def deobfuscate_code(self, content: str, package_name: str, version: str, file_name: str):
+        """Attempt to deobfuscate code"""
+        Deobfuscator.deobfuscate(content, package_name, version, file_name)

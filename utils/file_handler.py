@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List
 import json
-
+import shutil
 class FileHandler:
     """Handles file and directory operations"""
     
@@ -42,3 +42,19 @@ class FileHandler:
     def ensure_directory(directory: Path) -> None:
         """Create directory if it doesn't exist"""
         directory.mkdir(parents=True, exist_ok=True)
+
+    @staticmethod
+    def delete_previous_analysis() -> None:
+        """Delete all results from previous analysis (deobfuscated_files, repos, other_versions/extracted, log file, output directory"""
+
+        dirs_to_delete = ['deobfuscated_files', 'repos', 'other_versions/extracted', 'analysis_results']
+        for dir_name in dirs_to_delete:
+            dir_path = Path(dir_name)
+            if dir_path.exists() and dir_path.is_dir():
+                shutil.rmtree(dir_path)
+                print(f"Deleted directory: {dir_path}")
+
+        log_file = Path('log.txt')
+        if log_file.exists() and log_file.is_file():
+            log_file.unlink()
+            print(f"Deleted log file: {log_file}")

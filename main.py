@@ -15,8 +15,12 @@ def main():
     parser.add_argument('--log', default='log.txt', help='Log file (default: log.txt)')
     parser.add_argument('--local', action='store_true', help='Include local versions from other_versions directory (default: False)')
     parser.add_argument('--local-dir', default='./other_versions', help='Directory for local versions (default: ./other_versions)')
+    parser.add_argument('--delete-analysis', action='store_true', help='Delete previous analysis results before running (default: False)')
     args = parser.parse_args()
 
+    if args.delete_analysis:
+        FileHandler.delete_previous_analysis()
+    
     # setup log
     original_stdout = sys.stdout
     log_path = Path(args.log)

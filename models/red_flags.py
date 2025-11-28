@@ -35,8 +35,23 @@ class RedFlagChanges:
     directory_traversal_introduced: bool
 
     # CRYPTOJACKING & WALLET THEFT
+    initial_presence_of_crypto_addresses: bool
     crypto_addresses_introduced: bool
+    crypto_addresses_increase: bool
+    #---
+    change_crypto_addresses: bool
+    #---
+    initial_presence_of_wallet_checks: bool
     wallet_checks_introduced: bool
+    wallet_checks_increase: bool
+    #---
+    initial_presence_of_cryptocurrency_name: bool
+    cryptocurrency_name_introduced: bool
+    cryptocurrency_name_increase: bool
+    #---
+    replaced_crypto_addresses_introduced: bool
+    #---
+    hook_provider_introduced: bool
 
     # ACCOUNT COMPROMISE
     npm_new_maintainer: bool

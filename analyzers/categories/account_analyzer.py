@@ -16,8 +16,8 @@ class AccountAnalyzer:
         version = package_info.get('version', '')
         git_repo_path = package_info.get('git_repo_path')
         
-        # For local versions
-        if not version or '-local' in version:
+        # For local versions or deobfuscated versions
+        if not package_info or package_info == "local" or package_info == "deobfuscated":
             return self._empty_metrics()
         
         # If the package is NOT cached, fetch it from NPM
