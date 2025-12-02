@@ -13,11 +13,11 @@ class CodeAnalyzer:
         self.account_analyzer = AccountAnalyzer()
         self.release_analyzer = ReleaseAnalyzer()
 
-    def analyze_file(self, content: str, package_info: Dict, release_info: Dict) -> Dict:
+    def analyze_file(self, content: str, package_info: Dict, release_info: Dict, file_diff_additions: list[str], file_diff_deletions: list[str]) -> Dict:
         """Analyze a single file and return all metrics"""
         metrics = {}
         
-        metrics.update(self.evasion_analyzer.analyze(content, package_info))
+        metrics.update(self.evasion_analyzer.analyze(content, package_info, file_diff_additions))
         metrics.update(self.payload_analyzer.analyze(content))
         metrics.update(self.data_exfiltration_analyzer.analyze(content))
         metrics.update(self.cryptojacking_analyzer.analyze(content))

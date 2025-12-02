@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from models import *
 from comparators import VersionComparator
-from utils import FileHandler, LocalVersionManager
+from utils import FileHandler, LocalVersionManager, CalculateDiffs
 from .code_analyzer import CodeAnalyzer
 
 def version_key(tag: str):
@@ -35,6 +35,7 @@ class LocalVersionAnalyzer:
         self.local_version_manager = LocalVersionManager(local_versions_dir)
         self.version_comparator = VersionComparator()
         self._local_versions = {}
+        self._previous_contents = {}
 
     def setup_local_versions(self, package_name: str):
         """Sets up local versions for analysis."""
@@ -105,6 +106,11 @@ class LocalVersionAnalyzer:
                 )
                 content = self.file_handler.read_file(file_path)
                 
+                 # Calcolo del diff con la versione precedente
+                previous_content = self._previous_contents.get(rel_path)
+                diffs_additions, diffs_deletions = CalculateDiffs.calculate_file_diffs(previous_content, content)
+
+                
                 package_info = {
                     'name': package_name,
                     'version': version,      # Local version indicator included
@@ -115,16 +121,21 @@ class LocalVersionAnalyzer:
                 file_metrics = self.code_analyzer.analyze_file(
                     content, 
                     package_info=package_info, 
-                    release_info="local"
+                    release_info="local",
+                    file_diff_additions=diffs_additions,
+                    file_diff_deletions=diffs_deletions
                 )
 
                 metrics = FileMetrics(
                     package=package_name,
                     version=version,
                     file_path=rel_path,
+                    changes_additions= diffs_additions,
+                    changes_deletions= diffs_deletions,
                     **file_metrics
                 )
                 metrics_list.append(metrics)
+                self._previous_contents[rel_path] = content
             except Exception as e:
                 print(f"Error analyzing {file_path}: {e}")
 

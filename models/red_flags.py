@@ -9,9 +9,9 @@ class RedFlagChanges:
     version_to: str
     
     # EVASION TECHNIQUES
-    obfuscation_introduced: bool
-    obfuscation_class_changed: bool
-    new_code_obfuscated_differently: bool
+    transformed_code_introduceduced: bool
+    transformed_code_class_changed: bool
+    inserting_new_code_transformed_differently: bool
     hex_suspicious_patterns_increase_significant: bool
     timing_delays_introduced: bool
     dynamic_imports_introduced: bool

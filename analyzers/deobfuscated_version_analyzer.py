@@ -86,13 +86,17 @@ class DeobfuscatedAnalyzer:
                 file_metrics = self.code_analyzer.analyze_file(
                     content, 
                     package_info=package_info, 
-                    release_info="deobfuscated"
+                    release_info="deobfuscated",
+                    file_diff_additions='',
+                    file_diff_deletions=''
                 )
 
                 metrics = FileMetrics(
                     package=package_name,
                     version=version,
                     file_path=str(file_path.relative_to(version_dir)),
+                    changes_additions='',
+                    changes_deletions='',
                     **file_metrics
                 )
                 metrics_list.append(metrics)

@@ -9,9 +9,9 @@ class EvasionComparator:
         # New file
         if prev is None:
             return {
-                'obfuscation_introduced': curr.transformed_type == "obfuscated",
-                'obfuscation_class_changed': False,
-                'new_code_obfuscated_differently': False,
+                'transformed_code_introduceduced': curr.is_transformed,
+                'transformed_code_class_changed': False,
+                'inserting_new_code_transformed_differently': False,
                 'hex_suspicious_patterns_increase_significant': curr.suspicious_patterns_count > 20,  # threshold
                 'timing_delays_introduced': False,
                 'dynamic_imports_introduced': False,
@@ -23,10 +23,10 @@ class EvasionComparator:
         else:
             # Existing file
             return {
-                'obfuscation_introduced': prev.transformed_type != "obfuscated" and curr.transformed_type == "obfuscated",
-                # I don't distinguish between the types of obfuscation at the moment
-                'obfuscation_class_changed': False, #prev.transformed_type != curr.transformed_type,
-                'new_code_obfuscated_differently': False,
+                'transformed_code_introduceduced': not prev.is_transformed and curr.is_transformed,
+                'transformed_code_class_changed': prev.transformed_type != curr.transformed_type and prev.is_transformed,
+                'inserting_new_code_transformed_differently':  prev.transformed_type != curr.new_code_transformed_type
+                                                               and curr.new_code_transformed_type != "none",
                 # threshold, increase by at least 100% (double) and at least the increase must be 20
                 'hex_suspicious_patterns_increase_significant': (
                     (increase := curr.suspicious_patterns_count - prev.suspicious_patterns_count) >= 20 and 

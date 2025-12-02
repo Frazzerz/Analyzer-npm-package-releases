@@ -4,7 +4,7 @@ from git import Repo
 
 from models import *
 from comparators import VersionComparator
-from utils import FileHandler
+from utils import FileHandler, CalculateDiffs
 from .code_analyzer import CodeAnalyzer
 
 class GitVersionAnalyzer:
@@ -14,6 +14,7 @@ class GitVersionAnalyzer:
         self.code_analyzer = code_analyzer
         self.file_handler = file_handler
         self.version_comparator = VersionComparator()
+        self._previous_contents = {}
     
     def analyze_git_versions(self, package_name: str, repo: Repo) -> Tuple[List[FileMetrics], List[RedFlagChanges]]:
         """Analyze all Git versions of the package"""
@@ -60,8 +61,11 @@ class GitVersionAnalyzer:
             try:
                 rel_path = str(file_path.relative_to(package_dir))
                 content = self.file_handler.read_file(file_path)
-                
-                # Info for NPM
+
+                # Calcolo del diff con la versione precedente
+                previous_content = self._previous_contents.get(rel_path)
+                diffs_additions, diffs_deletions = CalculateDiffs.calculate_file_diffs(previous_content, content)
+
                 package_info = {
                     'name': package_name,
                     'version': normalized_version,
@@ -75,19 +79,25 @@ class GitVersionAnalyzer:
                     'git_repo_path': str(package_dir)
                 }
                 
-                file_metrics = self.code_analyzer.analyze_file(     # TODO Ora package_info e release_info sono uguali, ma in futuro potrebbero differire
+                file_metrics = self.code_analyzer.analyze_file(
                     content, 
                     package_info=package_info,
-                    release_info=release_info
+                    release_info=release_info,
+                    file_diff_additions=diffs_additions,
+                    file_diff_deletions=diffs_deletions
                 )
 
                 metrics = FileMetrics(
                     package=package_name,
                     version=normalized_version,
                     file_path=rel_path,
+                    changes_additions= diffs_additions,
+                    changes_deletions= diffs_deletions,
                     **file_metrics
                 )
                 metrics_list.append(metrics)
+                self._previous_contents[rel_path] = content
             except Exception as e:
                 print(f"Error analyzing {file_path}: {e}")
+
         return metrics_list

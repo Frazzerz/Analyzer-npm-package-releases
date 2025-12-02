@@ -14,7 +14,7 @@ class FileMetrics:
     suspicious_patterns_count: int
     list_suspicious_patterns: List[str]
     longest_line_length: int
-    new_code_obfuscated_differently: bool
+    new_code_transformed_type: str
     timing_delays: int
     dynamic_imports: int
     env_node_env: int
@@ -62,3 +62,6 @@ class FileMetrics:
     hash_github: str
     hash_npm: str
     malicious_issues: int
+
+    changes_additions: List[str]
+    changes_deletions: List[str]

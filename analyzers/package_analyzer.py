@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 from models import *
-from utils import NPMClient, FileHandler
+from utils import NPMClient, FileHandler, CalculateDiffs
 from .git_version_analyzer import GitVersionAnalyzer
 from .local_version_analyzer import LocalVersionAnalyzer  
 from .deobfuscated_version_analyzer import DeobfuscatedAnalyzer
@@ -15,6 +15,7 @@ class PackageAnalyzer:
         self.npm_client = NPMClient()
         self.file_handler = FileHandler()
         self.code_analyzer = CodeAnalyzer()
+        self.calculate_diffs = CalculateDiffs()
         self.include_local = include_local
         self.git_analyzer = GitVersionAnalyzer(self.code_analyzer, self.file_handler)
         self.local_analyzer = LocalVersionAnalyzer(self.code_analyzer, self.file_handler, local_versions_dir)
@@ -41,7 +42,7 @@ class PackageAnalyzer:
             all_metrics.extend(local_metrics)
             all_changes.extend(local_changes)
 
-        #If deobfuscated files were created during analysis, analyze them as well
+        # If deobfuscated files were created during analysis, analyze them as well
         deobf_dir = Path('deobfuscated_files') / package_name
         if deobf_dir.exists() and deobf_dir.is_dir():
             deobf_metrics, deobf_changes = self.deobfuscated_analyzer.analyze_deobfuscated_versions(package_name, deobf_dir)
