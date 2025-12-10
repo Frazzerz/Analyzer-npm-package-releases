@@ -1,14 +1,12 @@
 from .npm_client import NPMClient
-from .package_info import PackageInfo
 from .file_handler import FileHandler
 from .local_version_manager import LocalVersionManager
 from .logging_utils import synchronized_print, setup_logging, TeeOutput
 from .deobfuscate import Deobfuscator
 from .calculate_diffs import CalculateDiffs
-
+from .utils_for_analyzer import UtilsForAnalyzer
 __all__ = [
     'NPMClient',
-    'PackageInfo',
     'FileHandler',
     'LocalVersionManager',
     'synchronized_print',
@@ -16,4 +14,5 @@ __all__ = [
     'TeeOutput',
     'Deobfuscator',
     'CalculateDiffs',
+    'UtilsForAnalyzer',
 ]

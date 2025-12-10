@@ -62,7 +62,7 @@ class GitVersionAnalyzer:
                 rel_path = str(file_path.relative_to(package_dir))
                 content = self.file_handler.read_file(file_path)
 
-                # Calcolo del diff con la versione precedente
+                # Calculating the diff with the previous version
                 previous_content = self._previous_contents.get(rel_path)
                 diffs_additions, diffs_deletions = CalculateDiffs.calculate_file_diffs(previous_content, content)
 

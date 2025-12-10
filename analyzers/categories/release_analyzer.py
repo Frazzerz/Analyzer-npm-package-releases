@@ -1,14 +1,13 @@
 from datetime import datetime, timezone
 from typing import Dict, Optional
 from git import Repo
-
-from utils import PackageInfo
+from utils import NPMClient
 
 class ReleaseAnalyzer:
     """Analyzes release integrity anomalies"""
     
     def __init__(self):
-        self.package_info = PackageInfo()
+        self.npm_client = NPMClient()
         self._release_cache = {}
     
     def analyze(self, release_info: Dict) -> Dict:
@@ -24,9 +23,9 @@ class ReleaseAnalyzer:
         if not package_name or not version or not git_repo_path:
             return self._empty_metrics()
         
-        # If the package is NOT cached, fetch it from NPMM
+        # If the package is NOT cached, fetch it from NPM
         if package_name not in self._release_cache:
-            self._release_cache[package_name] = self.package_info.get_npm_package_data(package_name)
+            self._release_cache[package_name] = self.npm_client.get_npm_package_data(package_name)
         
         # Use cached data (whether just added or already present)
         npm_data = self._release_cache[package_name]

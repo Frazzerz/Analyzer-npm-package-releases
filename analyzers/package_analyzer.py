@@ -34,7 +34,7 @@ class PackageAnalyzer:
             all_changes.extend(git_changes)
         else:
             print(f"Unable to analyze {package_name} - Git repository not available")
-        
+
         # If requested, analyze local versions
         if self.include_local:
             self.local_analyzer.setup_local_versions(package_name)

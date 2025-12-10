@@ -1,10 +1,11 @@
 import re
-from typing import Dict
+from typing import Dict, List, Pattern
+from utils import UtilsForAnalyzer
 
 class DataExfiltrationAnalyzer:
     """Analyze data exfiltration & command and control techniques"""
     
-    SCAN_FUNCTIONS_PATTERNS = [
+    SCAN_FUNCTIONS_PATTERNS: List[Pattern] = [
         re.compile(r'(\w+)\.(get)?homedir\s*\(?\s*\)?\s*', re.IGNORECASE),
         re.compile(r'(\w+)\.(readdirsync|scanfilesystem|scanfs)\s*\(([^;]*);', re.IGNORECASE),
         re.compile(r'(\w+)\.(readfile(sync)?)\s*\(([^;]*);', re.IGNORECASE),
@@ -17,11 +18,11 @@ class DataExfiltrationAnalyzer:
         # statSync reads the metadata of a file or folder and returns a fs.Stats object. It can be used later to do e.g. stats.isFile()
     ]
 
-    SCANNED_ELEMENTS_PATTERNS = [
+    SCANNED_ELEMENTS_PATTERNS: List[Pattern] = [
         re.compile(r'\w*[_-]?\.?host[-_]?name\.?[_-]?\w*', re.IGNORECASE),                                                 # Hostname
         re.compile(r'\w*[_-]?\.?userinfo\.?[_-]?\w*', re.IGNORECASE),                                                      # Userinfo
-        # Ssh Aws Secret Client Access Token Auth Private
-        re.compile(r'\w*[-_]?\.?(ssh|aws|secret|client|access|token|auth|private)s?\.?[-_]?\w*', re.IGNORECASE),
+        # Ssh Aws Secret Access Token. No more Client Auth Private
+        re.compile(r'\w*[-_]?\.?(ssh|aws|secret|access|token)s?\.?[-_]?\w*', re.IGNORECASE),
         re.compile(r'\w*[_-]?\.?database\.?[_-]?\w*', re.IGNORECASE),                                                      # Database
         re.compile(r'\w*[_-]?\.?google\.?[_-]?\w*', re.IGNORECASE),                                                        # Google
         re.compile(r'\w*[_-]?api[_-]?key[s]?\w*', re.IGNORECASE),                                                          # API Key
@@ -44,26 +45,6 @@ class DataExfiltrationAnalyzer:
             'list_data_transmission': [],
         }
 
-        scan_functions_count, list_scan_functions = self.detect_scan_functions(content)
-        metrics['scan_functions_count'] = scan_functions_count
-        metrics['list_scan_functions'] = list_scan_functions
-        
-        sensitive_elements_count, list_sensitive_elements = self.detect_scanned_elements(content)
-        metrics['sensitive_elements_count'] = sensitive_elements_count
-        metrics['list_sensitive_elements'] = list_sensitive_elements
-        
+        metrics['scan_functions_count'],  metrics['list_scan_functions'] = UtilsForAnalyzer.detect_patterns(content, self.SCAN_FUNCTIONS_PATTERNS)
+        metrics['sensitive_elements_count'], metrics['list_sensitive_elements'] = UtilsForAnalyzer.detect_patterns(content, self.SCANNED_ELEMENTS_PATTERNS)
         return metrics
-    
-    def detect_scan_functions(self, content: str) -> tuple[int, list[str]]:
-        matches = []
-        for pattern in DataExfiltrationAnalyzer.SCAN_FUNCTIONS_PATTERNS:
-            for match in pattern.finditer(content):
-                matches.append(match.group(0))
-        return len(matches), matches
-    
-    def detect_scanned_elements(self, content: str) -> tuple[int, list[str]]:
-        matches = []
-        for pattern in DataExfiltrationAnalyzer.SCANNED_ELEMENTS_PATTERNS:
-           for match in pattern.finditer(content):
-            matches.append(match.group(0))
-        return len(matches), matches

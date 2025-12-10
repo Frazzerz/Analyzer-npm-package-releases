@@ -1,13 +1,12 @@
 from typing import Dict
 from git import Repo
-
-from utils import PackageInfo
+from utils import NPMClient
 
 class AccountAnalyzer:
     """Analyzes account compromise"""
     
     def __init__(self):
-        self.package_info = PackageInfo()
+        self.npm_client = NPMClient()
         self._package_cache = {}
     
     def analyze(self, package_info: Dict) -> Dict:
@@ -22,7 +21,7 @@ class AccountAnalyzer:
         
         # If the package is NOT cached, fetch it from NPM
         if package_name not in self._package_cache:
-            self._package_cache[package_name] = self.package_info.get_npm_package_data(package_name)
+            self._package_cache[package_name] = self.npm_client.get_npm_package_data(package_name)
         
         # Use cached data (whether just added or already present)
         npm_data = self._package_cache[package_name]

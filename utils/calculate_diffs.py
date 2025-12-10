@@ -24,17 +24,12 @@ class CalculateDiffs:
         additions = []
         deletions = []
         
-        # Use SequenceMatcher for a more efficient calculation
-        matcher = difflib.SequenceMatcher(None, old_lines, new_lines)
+        diff = difflib.unified_diff(old_lines, new_lines, lineterm='')
         
-        for tag, i1, i2, j1, j2 in matcher.get_opcodes():
-            if tag == 'insert':
-                additions.extend([line.strip() for line in new_lines[j1:j2]])
-            elif tag == 'delete':
-                deletions.extend([line.strip() for line in old_lines[i1:i2]])
-            elif tag == 'replace':
-                # When there is a replacement, the old lines are removed, the new ones are added
-                deletions.extend([line.strip() for line in old_lines[i1:i2]])
-                additions.extend([line.strip() for line in new_lines[j1:j2]])
+        for line in diff:
+            if line.startswith('+') and not line.startswith('+++'):
+                additions.append(line[1:].strip())
+            elif line.startswith('-') and not line.startswith('---'):
+                deletions.append(line[1:].strip())
         
         return additions, deletions

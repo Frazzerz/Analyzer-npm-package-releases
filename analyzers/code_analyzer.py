@@ -1,5 +1,4 @@
 from typing import Dict
-
 from .categories import *
 
 class CodeAnalyzer:
