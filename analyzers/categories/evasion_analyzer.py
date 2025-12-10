@@ -14,6 +14,15 @@ class EvasionAnalyzer:
         # + at least one
         # * zero or more
         # ? facoltative
+        # . matches any character except newline
+    }
+
+    PLATFORM_PATTERNS = {
+        # process.platform() == 'win32'  platform === "linux"
+        r'(\w+\.)?platform\(?\)?\s*[!=]==?\s*[\'"](win(32|64|dows)?|linux|darwin|mac(os)?)[\'"]',
+        # [!=]==? -> ==, ===, !=, !==
+        # \' for escape
+        # darwin  macOS
     }
 
     def analyze(self, content: str, package_info: Dict, file_diff_additions: list[str]) -> Dict:
@@ -24,11 +33,10 @@ class EvasionAnalyzer:
             'list_suspicious_patterns': [],
             'longest_line_length': 0,
             'new_code_transformed_type': 'none',
-            'timing_delays': 0,
-            'dynamic_imports': 0,
-            'env_node_env': 0,
-            'env_platform': 0,
-            'execution_time': 0,
+            'platform_detections_count': 0,
+            'list_platform_detections': [],
+            'concatenated_elements_count': 0,
+            'list_concatenated_elements': [],
         }
         
         is_transformed, transformed_type, suspicious_patterns_count, list_suspicious_patterns, longest_line_length = self._detect_obfuscation(content, package_info['info'])
@@ -40,10 +48,20 @@ class EvasionAnalyzer:
         metrics['list_suspicious_patterns'] = list_suspicious_patterns
         metrics['longest_line_length'] = longest_line_length
 
-        new_code_transformed_type = self._detect_obfuscation_diff('\n'.join(file_diff_additions))   # "line1\nline2\nline3"
+        new_code_transformed_type = self._detect_obfuscation_diff('\n'.join(file_diff_additions))       # "line1\nline2\nline3"
         metrics['new_code_transformed_type'] = new_code_transformed_type    
 
+        metrics['platform_detections_count'], metrics['list_platform_detections'] = self.platform_detection(content)
+
         return metrics
+    
+    def platform_detection(self, content: str) -> tuple[int, list[str]]:
+        matches = []
+        for pattern in EvasionAnalyzer.PLATFORM_PATTERNS:
+            # Usa finditer invece di findall perchè uso gruppi di cattura
+            for match in re.finditer(pattern, content, re.IGNORECASE):
+                matches.append(match.group(0))  # group(0) = intera corrispondenza
+        return len(matches), matches
     
     def _detect_obfuscation(self, content: str, info: str) -> tuple[bool, str, int, list, int]:
         """Detect if code is obfuscated and what type.

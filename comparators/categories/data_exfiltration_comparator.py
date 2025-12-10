@@ -4,23 +4,27 @@ from models import FileMetrics
 class DataExfiltrationComparator:
     """Compare data exfiltration & command and control metrics to identify red flags"""
     
-    def compare(self, prev: FileMetrics, curr: FileMetrics) -> Dict:
-        
+    def compare(self, prev: FileMetrics, curr: FileMetrics) -> Dict:        
         # New file
         if prev is None:
             return {
-                'tcp_udp_introduced': curr.tcp_udp_sockets > 0,                                                              #TODO ALL, placeholder
-                'http_requests_introduced': curr.http_requests > 0,
-                'suspicious_domains_introduced': curr.suspicious_domains > 0,
-                'sensitive_reads_introduced': curr.sensitive_file_reads > 0,
-                'directory_traversal_introduced': curr.directory_traversal > 0,
+                'scan_functions_presence_significant': curr.scan_functions_count > 20,          # threshold
+                'scan_functions_increase_significant': False,
+                'sensitive_elements_presence_significant': curr.sensitive_elements_count > 20,  # threshold
+                'sensitive_elements_increase_significant': False,
+                'data_transmission_introduced': False,
+                'data_transmission_increase': False,
             }
         else:
             # Existing file
             return {
-                'tcp_udp_introduced': (prev.tcp_udp_sockets == 0 and curr.tcp_udp_sockets > 0),                              #TODO ALL, placeholder
-                'http_requests_introduced': (prev.http_requests == 0 and curr.http_requests > 0),
-                'suspicious_domains_introduced': (prev.suspicious_domains == 0 and curr.suspicious_domains > 0),
-                'sensitive_reads_introduced': (prev.sensitive_file_reads == 0 and curr.sensitive_file_reads > 0),
-                'directory_traversal_introduced': (prev.directory_traversal == 0 and curr.directory_traversal > 0),
+                'scan_functions_presence_significant': False,
+                # threshold, increase by at least more than 100% (double) and at least the increase must be 20
+                'scan_functions_increase_significant': (( increase := curr.scan_functions_count - prev.scan_functions_count) >= 20 and
+                    increase > prev.scan_functions_count ),
+                'sensitive_elements_presence_significant': False,
+                'sensitive_elements_increase_significant': (( increase := curr.sensitive_elements_count - prev.sensitive_elements_count) >= 20 and
+                    increase > prev.sensitive_elements_count ),
+                'data_transmission_introduced': False,
+                'data_transmission_increase': False,
             }

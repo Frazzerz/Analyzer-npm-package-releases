@@ -9,30 +9,34 @@ class RedFlagChanges:
     version_to: str
     
     # EVASION TECHNIQUES
-    transformed_code_introduceduced: bool
+    transformed_code_introduced: bool
     transformed_code_class_changed: bool
     inserting_new_code_transformed_differently: bool
+    hex_suspicious_patterns_presence_significant: bool
     hex_suspicious_patterns_increase_significant: bool
-    timing_delays_introduced: bool
-    dynamic_imports_introduced: bool
-    env_detection_introduced: bool
-    platform_detection_introduced: bool
-    time_detection_introduced: bool
+    platform_detections_presence_significant: bool
+    platform_detections_increase_significant: bool
+    presence_of_concatenated_elements: bool
 
     # PAYLOAD DELIVERY & EXECUTION
-    eval_shell_introduced: bool
-    new_files_added_inside_pkg: bool
+    timing_delays_presence_significant: bool
+    timing_delays_increase_significant: bool
+    eval_function_presence_significant: bool
+    eval_function_increase_significant: bool
+    shell_commands_presence_significant: bool
+    shell_commands_increase_significant: bool
     size_increase_significant: bool
-    dependency_suspicious_pkg_added_few_downloads: bool
-    dependency_suspicious_pkg_added_just_created: bool
-    dependency_suspicious_pkg_added_typesquatted: bool
+    preinstall_scripts_introduced: bool
+    preinstall_scripts_increase: bool
+    suspicious_dependency_introduced: bool
 
     # DATA EXFILTRATION & C2
-    tcp_udp_introduced: bool
-    http_requests_introduced: bool
-    suspicious_domains_introduced: bool
-    sensitive_reads_introduced: bool
-    directory_traversal_introduced: bool
+    scan_functions_presence_significant: bool
+    scan_functions_increase_significant: bool
+    sensitive_elements_presence_significant: bool
+    sensitive_elements_increase_significant: bool
+    data_transmission_introduced: bool
+    data_transmission_increase: bool
 
     # CRYPTOJACKING & WALLET THEFT
     initial_presence_of_crypto_addresses: bool

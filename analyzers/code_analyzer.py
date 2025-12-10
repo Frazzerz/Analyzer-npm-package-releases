@@ -18,7 +18,7 @@ class CodeAnalyzer:
         metrics = {}
         
         metrics.update(self.evasion_analyzer.analyze(content, package_info, file_diff_additions))
-        metrics.update(self.payload_analyzer.analyze(content))
+        metrics.update(self.payload_analyzer.analyze(content, file_diff_additions))
         metrics.update(self.data_exfiltration_analyzer.analyze(content))
         metrics.update(self.cryptojacking_analyzer.analyze(content))
         metrics.update(self.account_analyzer.analyze(package_info))

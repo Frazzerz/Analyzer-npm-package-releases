@@ -15,27 +15,29 @@ class FileMetrics:
     list_suspicious_patterns: List[str]
     longest_line_length: int
     new_code_transformed_type: str
-    timing_delays: int
-    dynamic_imports: int
-    env_node_env: int
-    env_platform: int
-    execution_time: int
+    platform_detections_count: int
+    list_platform_detections: List[str]
+    concatenated_elements_count: int
+    list_concatenated_elements: List[str]
     
     # PAYLOAD DELIVERY & EXECUTION
-    eval: int
-    shell_commands: int
-    file_or_executable_inside_pkg: int
+    timing_delays_count: int
+    list_timing_delays: List[str]
+    eval_count: int
+    eval_list: List[str]
+    shell_commands_count: int
     file_size_bytes: int
-    suspicious_dependencies_few_downloads: int
-    suspicious_dependencies_just_created: int
-    suspicious_dependencies_typesquatted: int
-    
+    preinstall_scripts_count: int
+    list_preinstall_scripts: List[str]
+    presence_of_suspicious_dependency: int
+
     # DATA EXFILTRATION & C2
-    tcp_udp_sockets: int
-    http_requests: int
-    suspicious_domains: int
-    sensitive_file_reads: int
-    directory_traversal: int
+    scan_functions_count: int
+    list_scan_functions: List[str]
+    sensitive_elements_count: int
+    list_sensitive_elements: List[str]
+    data_transmission_count: int
+    list_data_transmission: List[str]
     
     # CRYPTOJACKING & WALLET THEFT
     crypto_addresses: int

@@ -4,39 +4,66 @@ from typing import Dict
 class DataExfiltrationAnalyzer:
     """Analyze data exfiltration & command and control techniques"""
     
-    '''
-    PATTERNS = {
-        'tcp_socket': ...,
-        'http': ...
+    SCAN_FUNCTIONS_PATTERNS = {
+        r'(\w+)\.(get)?homedir\s*\(?\s*\)?\s*',
+        r'(\w+)\.(readdirsync|scanfilesystem|scanfs)\s*\(([^;]*);',
+        r'(\w+)\.(readfile(sync)?)\s*\(([^;]*);',
+        r'\w*\.arch\s*\(\s*\)',
+        # .arch() returns the CPU architecture of the operating system on which Node.js is running
+        # os.homedir() Gets the home directory and is base, gethomedir() is custom wrapper function
+        # readdirsync reads the content of a directory
+        # scanFileSystem is custom function
+        # readFileSync reads the content of a file
+        # statSync reads the metadata of a file or folder and returns a fs.Stats object. It can be used later to do e.g. stats.isFile()
     }
-    
-    SUSPICIOUS_DOMAINS = [
-        r'\b(bit\.ly|tinyurl|short\.io|goo\.gl)\b',
-        r'\b([0-9]{1,3}\.){3}[0-9]{1,3}\b',  # IP addresses
-        r'\b(malicious|suspicious|evil|hack|steal)\.',
-    ]
-    '''
+
+    SCANNED_ELEMENTS_PATTERNS = {
+        r'\w*[_-]?\.?host[-_]?name\.?[_-]?\w*',                                                 # Hostname
+        r'\w*[_-]?\.?userinfo\.?[_-]?\w*',                                                      # Userinfo
+        # Ssh Aws Secret Client Access Token Auth Private
+        r'\w*[-_]?\.?(ssh|aws|secret|client|access|token|auth|private)s?\.?[-_]?\w*',
+        r'\w*[_-]?\.?database\.?[_-]?\w*',                                                      # Database
+        r'\w*[_-]?\.?google\.?[_-]?\w*',                                                        # Google
+        r'\w*[_-]?api[_-]?key[s]?\w*',                                                          # API Key
+        r'(\w*)?\.env((\.)?\w*)?',                                                              # Env
+        r'(\w*)?(\.)?username[s]?((\.)?\w*)?',                                                  # Username
+        r'(\w*)?(\.)?[e]?[-]?mail[s]?((\.)?\w*)?',                                              # Email
+        r'(\w*)?(\.)?(password|passphrase)s?((\.)?\w*)?',                                     # Password or Passphrase
+        # [] indicate character set
+        # () capturing group
+        # \w alphanumeric character or underscore. This allows for characters attached to “access”
+    }
+
     def analyze(self, content: str) -> Dict:
-        metrics = {                                 # TODO ALL
-            'tcp_udp_sockets': 0,
-            'http_requests': 0,
-            'suspicious_domains': 0,
-            'sensitive_file_reads': 0,
-            'directory_traversal': 0,
+        metrics = {
+            'scan_functions_count': 0,
+            'list_scan_functions': [],
+            'sensitive_elements_count': 0,
+            'list_sensitive_elements': [],
+            'data_transmission_count': 0,
+            'list_data_transmission': [],
         }
+
+        scan_functions_count, list_scan_functions = self.detect_scan_functions(content)
+        metrics['scan_functions_count'] = scan_functions_count
+        metrics['list_scan_functions'] = list_scan_functions
         
-        '''
-        metrics['tcp_udp_sockets'] = len(re.findall(self.PATTERNS['tcp_socket'], content))
-        metrics['http_requests'] = len(re.findall(self.PATTERNS['http'], content))
-        ...
-        
-        for domain_pattern in self.SUSPICIOUS_DOMAINS:
-            metrics['suspicious_domains'] += len(re.findall(domain_pattern, content))
-        '''
-        
-        # TODO
-        # Ovveride di fetch - fetch = async function (..._0x1ae7ec) {
-        # Override di XMLHttpRequest - XMLHttpRequest.prototype.open = function 
-        #URL_PATTERN = re.compile(r'https?://[^\s]+')
+        sensitive_elements_count, list_sensitive_elements = self.detect_scanned_elements(content)
+        metrics['sensitive_elements_count'] = sensitive_elements_count
+        metrics['list_sensitive_elements'] = list_sensitive_elements
         
         return metrics
+    
+    def detect_scan_functions(self, content: str) -> tuple[int, list[str]]:
+        matches = []
+        for pattern in DataExfiltrationAnalyzer.SCAN_FUNCTIONS_PATTERNS:
+            for match in re.finditer(pattern, content, re.IGNORECASE):  # re.DOTALL to match newlines
+                matches.append(match.group(0))
+        return len(matches), matches
+    
+    def detect_scanned_elements(self, content: str) -> tuple[int, list[str]]:
+        matches = []
+        for pattern in DataExfiltrationAnalyzer.SCANNED_ELEMENTS_PATTERNS:
+           for match in re.finditer(pattern, content, re.IGNORECASE):
+            matches.append(match.group(0))
+        return len(matches), matches
