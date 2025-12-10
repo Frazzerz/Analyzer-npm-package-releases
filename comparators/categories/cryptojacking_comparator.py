@@ -26,16 +26,16 @@ class CryptojackingComparator:
             # Existing file
             return {
                 'initial_presence_of_crypto_addresses': False,
-                'crypto_addresses_introduced': (prev.crypto_addresses == 0 and curr.crypto_addresses > 0),
-                'crypto_addresses_increase': (prev.crypto_addresses != 0 and prev.crypto_addresses < curr.crypto_addresses),    # increase only if previously is non-zero
+                'crypto_addresses_introduced': prev.crypto_addresses == 0 and curr.crypto_addresses > 0,
+                'crypto_addresses_increase': prev.crypto_addresses != 0 and prev.crypto_addresses < curr.crypto_addresses,    # increase only if previously is non-zero
                 'change_crypto_addresses': (prev.crypto_addresses == curr.crypto_addresses and 
                     set(prev.list_crypto_addresses) != set(curr.list_crypto_addresses)),
                 'initial_presence_of_wallet_checks': False,
-                'wallet_checks_introduced': (prev.wallet_detection == 0 and curr.wallet_detection > 0),
+                'wallet_checks_introduced': prev.wallet_detection == 0 and curr.wallet_detection > 0,
                 'wallet_checks_increase': prev.wallet_detection < curr.wallet_detection,
                 'initial_presence_of_cryptocurrency_name': False,
-                'cryptocurrency_name_introduced': (prev.cryptocurrency_name == 0 and curr.cryptocurrency_name > 0),
-                'cryptocurrency_name_increase': (prev.cryptocurrency_name != 0 and prev.cryptocurrency_name < curr.cryptocurrency_name),
-                'replaced_crypto_addresses_introduced': (prev.replaced_crypto_addresses == 0 and curr.replaced_crypto_addresses > 0),
-                'hook_provider_introduced': (prev.hook_provider == 0 and curr.hook_provider > 0)
+                'cryptocurrency_name_introduced': prev.cryptocurrency_name == 0 and curr.cryptocurrency_name > 0,
+                'cryptocurrency_name_increase': prev.cryptocurrency_name != 0 and prev.cryptocurrency_name < curr.cryptocurrency_name,
+                'replaced_crypto_addresses_introduced': prev.replaced_crypto_addresses == 0 and curr.replaced_crypto_addresses > 0,
+                'hook_provider_introduced': prev.hook_provider == 0 and curr.hook_provider > 0
             }

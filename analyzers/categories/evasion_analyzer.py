@@ -4,26 +4,30 @@ from utils import Deobfuscator
 class EvasionAnalyzer:
     """Analyze evasion techniques"""
 
-    OBFUSCATION_PATTERNS = {
-        r'_?0x[0-9a-fA-F]{6,}',                                         # Hexadecimal values and variables (at least 6 hex values), ex. 0x58e7a2 or _0x5f3b1c
-        r'parseInt\(_?0x[0-9a-fA-F]{6,}',                               # ParseInt with hexadecimals, ex. parseInt(0x58e7a2
-        r'try\{.*?\}catch\(_?0x[0-9a-fA-F]{6,}\)',                      # Try-catch blocks with obfuscated vars, ex. try{...}catch(_0x5f3b1c)
-        r'const\s+_?0x[0-9a-fA-F]{6,}\s*=\s*_?0x[0-9a-fA-F]{6,}',       # Constant assignments with obfuscated names, ex. const _0x5f3b1c = _0x5f3b1d 
-        r'_?0x[0-9a-fA-F]{6,}\(_?0x[0-9a-fA-F]{6,}',                    # Function calls with hex parameters, ex. _0x5f3b1c(0x58e7a2
+    OBFUSCATION_PATTERNS = [
+        re.compile(r'_?0x[0-9a-fA-F]{6,}'),                                                   # Hexadecimal values and variables (at least 6 hex values), ex. 0x58e7a2 or _0x5f3b1c
+        re.compile(r'parseInt\(_?0x[0-9a-fA-F]{6,}', re.IGNORECASE),                          # ParseInt with hexadecimals, ex. parseInt(0x58e7a2
+        re.compile(r'try\{.*?\}catch\(_?0x[0-9a-fA-F]{6,}\)', re.IGNORECASE),                 # Try-catch blocks with obfuscated vars, ex. try{...}catch(_0x5f3b1c)
+        re.compile(r'const\s+_?0x[0-9a-fA-F]{6,}\s*=\s*_?0x[0-9a-fA-F]{6,}', re.IGNORECASE),  # Constant assignments with obfuscated names, ex. const _0x5f3b1c = _0x5f3b1d 
+        re.compile(r'_?0x[0-9a-fA-F]{6,}\(_?0x[0-9a-fA-F]{6,}'),                              # Function calls with hex parameters, ex. _0x5f3b1c(0x58e7a2
         # \s for spaces
         # + at least one
         # * zero or more
         # ? facoltative
         # . matches any character except newline
-    }
+        # re.IGNORECASE for case insensitive, re.DOTALL to match newlines  
+    ]
 
-    PLATFORM_PATTERNS = {
+    PLATFORM_PATTERNS = [
         # process.platform() == 'win32'  platform === "linux"
-        r'(\w+\.)?platform\(?\)?\s*[!=]==?\s*[\'"](win(32|64|dows)?|linux|darwin|mac(os)?)[\'"]',
+        re.compile(
+            r'(\w+\.)?platform\(?\)?\s*[!=]==?\s*[\'"](win(32|64|dows)?|linux|darwin|mac(os)?)[\'"]',
+            re.IGNORECASE
+            ),
         # [!=]==? -> ==, ===, !=, !==
         # \' for escape
         # darwin  macOS
-    }
+    ]
 
     def analyze(self, content: str, package_info: Dict, file_diff_additions: list[str]) -> Dict:
         metrics = {
@@ -55,14 +59,6 @@ class EvasionAnalyzer:
 
         return metrics
     
-    def platform_detection(self, content: str) -> tuple[int, list[str]]:
-        matches = []
-        for pattern in EvasionAnalyzer.PLATFORM_PATTERNS:
-            # Usa finditer invece di findall perchè uso gruppi di cattura
-            for match in re.finditer(pattern, content, re.IGNORECASE):
-                matches.append(match.group(0))  # group(0) = intera corrispondenza
-        return len(matches), matches
-    
     def _detect_obfuscation(self, content: str, info: str) -> tuple[bool, str, int, list, int]:
         """Detect if code is obfuscated and what type.
             trasformed_type: Clear, Obfuscated, Deobfuscated or none (For now)
@@ -74,7 +70,7 @@ class EvasionAnalyzer:
         #Simple heuristic checks for obfuscation
         all_matches = []
         for pattern in EvasionAnalyzer.OBFUSCATION_PATTERNS:
-            all_matches.extend(re.findall(pattern, content))
+            all_matches.extend(pattern.findall(content))
         
         # Check number of lines longer than 30000 characters, remove spaces
         long_lines_count = [r for r in content.splitlines() if len(r.replace(' ', '')) > 30000]         # Threshold for long lines
@@ -95,3 +91,10 @@ class EvasionAnalyzer:
     def deobfuscate_code(self, content: str, package_name: str, version: str, file_name: str):
         """Attempt to deobfuscate code"""
         Deobfuscator.deobfuscate(content, package_name, version, file_name)
+
+    def platform_detection(self, content: str) -> tuple[int, list[str]]:
+        matches = []
+        for pattern in EvasionAnalyzer.PLATFORM_PATTERNS:
+            for match in pattern.finditer(content):
+                matches.append(match.group(0))
+        return len(matches), matches

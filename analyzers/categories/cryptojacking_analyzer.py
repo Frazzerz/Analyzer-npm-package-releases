@@ -4,6 +4,13 @@ from typing import Dict
 class CryptojackingAnalyzer:
     """Analyze cryptojacking & wallet theft techniques"""
 
+    def __init__(self):
+        self.REPLACE_CRYPTO_ADDRESS_PATTERN = re.compile(
+            # if ( <variable> == 'crypto_symbol' [any optional conditions] ) { [any code] .replace( ...
+            r'if\s*\(\s*[^=]+==\s*[\'"](?:' + self.get_all_crypto_symbols() + r')[\'"][^)]*\)\s*\{[^}]*?\.replace\s*\(',
+            re.IGNORECASE | re.DOTALL
+    )
+
     CRYPTO_PATTERNS = {                                     # From deofuscated malware example                              # 7 - 760, numeri miei, poi verranno cancellati
         'ethereum': re.compile(r'\b0x[a-fA-F0-9]{40}\b'),                                                                   # 7 - 130
         'bitcoinLegacy': re.compile(r'\b1[a-km-zA-HJ-NP-Z1-9]{25,34}\b'),                                                   # 0 - 85
@@ -81,39 +88,48 @@ class CryptojackingAnalyzer:
             'hook_provider': 0
         }
         
-        # Check for cryptocurrency addresses
-        for pattern in self.CRYPTO_PATTERNS.values():
-            matches = pattern.findall(content)
-            metrics['crypto_addresses'] += len(matches)
-            metrics['list_crypto_addresses'].extend(matches)
+        crypto_addresses, list_crypto_addresses = self.detect_cryptocurrency_addresses(content)
+        metrics['crypto_addresses'] = crypto_addresses
+        metrics['list_crypto_addresses'] = list_crypto_addresses
         
-        # Check for cryptocurrency names
-        for crypto_data in self.CRYPTOCURRENCY_NAMES.values():
-            pattern = crypto_data['pattern']
-            matches = pattern.findall(content)
-            metrics['cryptocurrency_name'] += len(matches)
+        cryptocurrency_name = self.detect_cryptocurrency_names(content)
+        metrics['cryptocurrency_name'] = cryptocurrency_name
 
-        # Check for wallet detection patterns
-        for pattern in self.WALLET_DETECTION_PATTERNS.values():
-            matches = pattern.findall(content)
-            metrics['wallet_detection'] += len(matches)
+        wallet_detection = self.detect_wallet_detection(content)
+        metrics['wallet_detection'] = wallet_detection
         
         # Mechanism present in the malware considered :
         #   Intercepts all HTTP responses (fetch/XMLHttpRequest) and replaces the cryptographic addresses found in the content with those controlled by the attacker
         # Check presence of cryptocurrency name and .replace function could indicate address substitution
-        REPLACE_CRYPTO_ADDRESS_PATTERN = re.compile(
-            # if ( <variable> == 'crypto_symbol' [any optional conditions] ) { [any code] .replace( ...
-            r'if\s*\(\s*[^=]+==\s*[\'"](?:' + self.get_all_crypto_symbols() + r')[\'"][^)]*\)\s*\{[^}]*?\.replace\s*\(',
-            re.IGNORECASE | re.DOTALL
-        )
-        replaced_matches = REPLACE_CRYPTO_ADDRESS_PATTERN.findall(content)
+        replaced_matches = self.REPLACE_CRYPTO_ADDRESS_PATTERN.findall(content)
         metrics['replaced_crypto_addresses'] += len(replaced_matches)
 
-        # Check for hooked provider functions
         hook_matches = self.HOOK_PROVIDER_PATTERN.findall(content)
         metrics['hook_provider'] += len(hook_matches)
 
         return metrics
+    
+    def detect_cryptocurrency_addresses(self, content: str) -> tuple[int, list[str]]:
+        matches = []
+        for pattern in self.CRYPTO_PATTERNS.values():
+            for match in pattern.findall(content):
+                matches.append(match)
+        return len(matches), matches
+    
+    def detect_cryptocurrency_names(self, content: str) -> int:
+        count = 0
+        for crypto_data in self.CRYPTOCURRENCY_NAMES.values():
+            pattern = crypto_data['pattern']
+            matches = pattern.findall(content)
+            count += len(matches)
+        return count
+    
+    def detect_wallet_detection(self, content: str) -> int:
+        count = 0
+        for pattern in self.WALLET_DETECTION_PATTERNS.values():
+            matches = pattern.findall(content)
+            count += len(matches)
+        return count
 
     def get_all_crypto_symbols(self):
         """Get all cryptocurrency symbols as a regex pattern"""

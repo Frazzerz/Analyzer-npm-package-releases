@@ -26,6 +26,7 @@ class FileMetrics:
     eval_count: int
     eval_list: List[str]
     shell_commands_count: int
+    list_shell_commands: List[str]
     file_size_bytes: int
     preinstall_scripts_count: int
     list_preinstall_scripts: List[str]
