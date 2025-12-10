@@ -25,7 +25,8 @@ class RedFlagChanges:
     eval_function_increase_significant: bool
     shell_commands_presence_significant: bool
     shell_commands_increase_significant: bool
-    size_increase_significant: bool
+    significant_initial_size_bytes: bool
+    size_bytes_increase_significant: bool
     preinstall_scripts_introduced: bool
     preinstall_scripts_increase: bool
     suspicious_dependency_introduced: bool

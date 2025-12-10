@@ -14,7 +14,8 @@ class PayloadComparator:
                 'eval_function_increase_significant': False,
                 'shell_commands_presence_significant': curr.shell_commands_count > 5,       # threshold
                 'shell_commands_increase_significant': False,
-                'size_increase_significant': False,
+                'significant_initial_size_bytes': curr.file_size_bytes > 1024 * 1024,        # 1 MB
+                'size_bytes_increase_significant': False,
                 'preinstall_scripts_introduced': curr.preinstall_scripts_count > 0,
                 'preinstall_scripts_increase': False,
                 'suspicious_dependency_introduced': False,
@@ -31,7 +32,8 @@ class PayloadComparator:
                 'shell_commands_presence_significant': False,
                 'shell_commands_increase_significant': ((increase := curr.shell_commands_count - prev.shell_commands_count) >= 5 
                                                        and increase > prev.shell_commands_count * 0.5 ),
-                'size_increase_significant': curr.file_size_bytes > prev.file_size_bytes * 2,                                 # 100% increase
+                'significant_initial_size_bytes': False,
+                'size_bytes_increase_significant': curr.file_size_bytes > prev.file_size_bytes * 10,                                 # 1000% increase
                 'preinstall_scripts_introduced': prev.preinstall_scripts_count == 0 and curr.preinstall_scripts_count > 0,
                 'preinstall_scripts_increase': curr.preinstall_scripts_count > prev.preinstall_scripts_count and prev.preinstall_scripts_count != 0,
                 'suspicious_dependency_introduced': False,
