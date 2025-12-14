@@ -51,7 +51,7 @@ class PayloadAnalyzer:
             'shell_commands_count': 0,
             'list_shell_commands': [],
             'file_size_bytes': len(content.encode('utf-8')),
-            'preinstall_scripts': False,
+            'preinstall_scripts': 0,
             'list_preinstall_scripts': [],
             #'presence_of_suspicious_dependency': 0,
         }
