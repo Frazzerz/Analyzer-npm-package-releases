@@ -7,10 +7,7 @@ class DataExfiltrationAnalyzer:
     
     SCAN_FUNCTIONS_PATTERNS: List[Pattern] = [
         re.compile(r'(\w+)\.(get)?homedir\s*\(?\s*\)?\s*', re.IGNORECASE),
-        re.compile(r'(\w+)\.(readdirsync|scanfilesystem|scanfs)\s*\(([^;]*);', re.IGNORECASE),
-        re.compile(r'(\w+)\.(readfile(sync)?)\s*\(([^;]*);', re.IGNORECASE),
-        re.compile(r'\w*\.arch\s*\(\s*\)', re.IGNORECASE),
-        # .arch() returns the CPU architecture of the operating system on which Node.js is running
+        re.compile(r'(\w+)\.((?:read(?:dir|file)|scanfilesystem)(?:sync)?)\s*\(([^;]*);', re.IGNORECASE)
         # os.homedir() Gets the home directory and is base, gethomedir() is custom wrapper function
         # readdirsync reads the content of a directory
         # scanFileSystem is custom function
@@ -19,17 +16,20 @@ class DataExfiltrationAnalyzer:
     ]
 
     SCANNED_ELEMENTS_PATTERNS: List[Pattern] = [
-        re.compile(r'\w*[_-]?\.?host[-_]?name\.?[_-]?\w*', re.IGNORECASE),                                                 # Hostname
-        re.compile(r'\w*[_-]?\.?userinfo\.?[_-]?\w*', re.IGNORECASE),                                                      # Userinfo
-        # Ssh Aws Secret Access Token. No more Client Auth Private
-        re.compile(r'\w*[-_]?\.?(ssh|aws|secret|access|token)s?\.?[-_]?\w*', re.IGNORECASE),
-        re.compile(r'\w*[_-]?\.?database\.?[_-]?\w*', re.IGNORECASE),                                                      # Database
-        re.compile(r'\w*[_-]?\.?google\.?[_-]?\w*', re.IGNORECASE),                                                        # Google
-        re.compile(r'\w*[_-]?api[_-]?key[s]?\w*', re.IGNORECASE),                                                          # API Key
-        re.compile(r'(\w*)?\.env((\.)?\w*)?', re.IGNORECASE),                                                              # Env
-        re.compile(r'(\w*)?(\.)?username[s]?((\.)?\w*)?', re.IGNORECASE),                                                  # Username
-        re.compile(r'(\w*)?(\.)?[e]?[-]?mail[s]?((\.)?\w*)?', re.IGNORECASE),                                              # Email
-        re.compile(r'(\w*)?(\.)?(password|passphrase)s?((\.)?\w*)?', re.IGNORECASE),                                     # Password or Passphrase
+        #re.compile(r'\w*[_-]?\.?host[-_]?name\.?[_-]?\w*', re.IGNORECASE),                                                 # Hostname
+        #re.compile(r'\w*[_-]?\.?userinfo\.?[_-]?\w*', re.IGNORECASE),                                                      # Userinfo
+        #re.compile(r'\w*[-_]?\.?(ssh|aws|secret|access|token)s?\.?[-_]?\w*', re.IGNORECASE),                               # Ssh Aws Secret Access Token
+        #re.compile(r'\w*[_-]?\.?database\.?[_-]?\w*', re.IGNORECASE),                                                      # Database
+        #re.compile(r'\w*[_-]?\.?google\.?[_-]?\w*', re.IGNORECASE),                                                        # Google
+        #re.compile(r'\w*[_-]?api[_-]?key[s]?\w*', re.IGNORECASE),                                                          # API Key
+        #re.compile(r'(\w*)?\.env((\.)?\w*)?', re.IGNORECASE),                                                              # Env
+        #re.compile(r'(\w*)?(\.)?username[s]?((\.)?\w*)?', re.IGNORECASE),                                                  # Username
+        #re.compile(r'(\w*)?(\.)?[e]?[-]?mail[s]?((\.)?\w*)?', re.IGNORECASE),                                              # Email
+        #re.compile(r'(\w*)?(\.)?(password|passphrase)s?((\.)?\w*)?', re.IGNORECASE),                                       # Password or Passphrase
+        
+        # Hostname, Userinfo, Ssh, Aws, Secret, Access, Token, Database, Google, API Key, Env, Username, Email, Password, Passphrase
+        # No more Client Auth Private env
+        re.compile(r'\w*[._-]?(?:host[-_]?name|userinfo|(?:ssh|aws|secret|access|token)s?|database|google|api[-_]?keys?usernames?|[e]?[-]?mails?|(?:pass(word|phrase))s?)[._-]?\w*', re.IGNORECASE),
         # [] indicate character set
         # () capturing group
         # \w alphanumeric character or underscore. This allows for characters attached to “access”
@@ -41,8 +41,8 @@ class DataExfiltrationAnalyzer:
             'list_scan_functions': [],
             'sensitive_elements_count': 0,
             'list_sensitive_elements': [],
-            'data_transmission_count': 0,
-            'list_data_transmission': [],
+            #'data_transmission_count': 0,      # Placeholder
+            #'list_data_transmission': [],      # Placeholder
         }
 
         metrics['scan_functions_count'],  metrics['list_scan_functions'] = UtilsForAnalyzer.detect_patterns(content, self.SCAN_FUNCTIONS_PATTERNS)

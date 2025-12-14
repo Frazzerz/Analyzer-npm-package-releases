@@ -73,16 +73,10 @@ class GitVersionAnalyzer:
                     'file_name': rel_path,
                     'info': "git"
                 }
-                release_info = {
-                    'package_name': package_name,
-                    'version': normalized_version,
-                    'git_repo_path': str(package_dir)
-                }
                 
                 file_metrics = self.code_analyzer.analyze_file(
                     content, 
                     package_info=package_info,
-                    release_info=release_info,
                     file_diff_additions=diffs_additions,
                     file_diff_deletions=diffs_deletions
                 )

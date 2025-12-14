@@ -21,13 +21,18 @@ class EvasionAnalyzer:
 
     PLATFORM_PATTERNS: List[Pattern] = [
         # process.platform() == 'win32'  platform === "linux"
+        # .arch() returns the CPU architecture of the operating system on which Node.js is running
         re.compile(
-            r'(\w+\.)?platform\(?\)?\s*[!=]==?\s*[\'"](win(32|64|dows)?|linux|darwin|mac(os)?)[\'"]',
+            r'(?:'
+            r'(\w+\.)?platform\(?\)?\s*[!=]==?\s*[\'"](?:win(?:32|64|dows)?|linux|darwin|mac(?:os)?)[\'"]|'
+            r'\w*\.arch\s*\(\s*\)'
+            r')',
             re.IGNORECASE
-            ),
+        ),
         # [!=]==? -> ==, ===, !=, !==
         # \' for escape
         # darwin  macOS
+        # (?:...) non-capturing group, best performance, do not allocate memory to capture the group
     ]
 
     def analyze(self, content: str, package_info: Dict, file_diff_additions: list[str]) -> Dict:
@@ -40,22 +45,22 @@ class EvasionAnalyzer:
             'new_code_transformed_type': 'none',
             'platform_detections_count': 0,
             'list_platform_detections': [],
-            'concatenated_elements_count': 0,
-            'list_concatenated_elements': [],
+            #'concatenated_elements_count': 0,
+            #'list_concatenated_elements': [],
         }
         
-        metrics['is_transformed'], transformed_type, metrics['suspicious_patterns_count'], metrics['list_suspicious_patterns'], metrics['longest_line_length'] = self._detect_obfuscation(content, package_info['info'])
-        if transformed_type == 'Obfuscated' and package_info['file_name'].endswith('.js'):              # Only deobfuscate JS files
+        metrics['is_transformed'], transformed_type, metrics['suspicious_patterns_count'], metrics['list_suspicious_patterns'], metrics['longest_line_length'] = self._detect_transformed_code(content, package_info['info'])
+        if transformed_type == 'Obfuscated' and package_info['file_name'].endswith('.js'):                              # Only deobfuscate JS files
             self.deobfuscate_code(content, package_info['name'], package_info['version'], package_info['file_name'])
 
         metrics['transformed_type'] = transformed_type
 
-        metrics['new_code_transformed_type'] = self._detect_obfuscation_diff('\n'.join(file_diff_additions))       # "line1\nline2\nline3"
+        metrics['new_code_transformed_type'] = self._detect_transformed_code_diff('\n'.join(file_diff_additions))       # "line1\nline2\nline3"
         metrics['platform_detections_count'], metrics['list_platform_detections'] = UtilsForAnalyzer.detect_patterns(content, self.PLATFORM_PATTERNS)
 
         return metrics
     
-    def _detect_obfuscation(self, content: str, info: str) -> tuple[bool, str, int, list, int]:
+    def _detect_transformed_code(self, content: str, info: str) -> tuple[bool, str, int, list, int]:
         """Detect if code is obfuscated and what type.
             trasformed_type: Clear, Obfuscated, Deobfuscated or none (For now)
             return if is_transformed, transformed_type, suspicious_patterns_count, list_suspicious_patterns, longest_line_length"""
@@ -67,19 +72,19 @@ class EvasionAnalyzer:
         len_all_matches, all_matches = UtilsForAnalyzer.detect_patterns(content, self.OBFUSCATION_PATTERNS)
         
         # Check number of lines longer than 30000 characters, remove spaces
-        long_lines_count = [r for r in content.splitlines() if len(r.replace(' ', '')) > 30000]         # Threshold for long lines
+        long_lines_count = [r for r in content.splitlines() if len(r.replace(' ', '')) > 30000]                         # Threshold for long lines
         longest_line_length = max(len(r.replace(' ', '')) for r in content.splitlines()) if content.splitlines() else 0
 
         if info == 'deobfuscated':
             return True, "Deobfuscated", len_all_matches, all_matches, longest_line_length
 
-        if len_all_matches > 15 and len(long_lines_count) > 0:                                         # Threshold for obfuscation detection
+        if len_all_matches > 15 and len(long_lines_count) > 0:                                                          # Threshold for obfuscation detection
             return True, "Obfuscated", len_all_matches, all_matches, longest_line_length
 
         return False, "Clear", len_all_matches, all_matches, longest_line_length
     
-    def _detect_obfuscation_diff(self, diff_content: str) -> str:
-        _, transformed_type, _, _, _ = self._detect_obfuscation(diff_content, 'Diff')                   # Diff is not used for now
+    def _detect_transformed_code_diff(self, diff_content: str) -> str:
+        _, transformed_type, _, _, _ = self._detect_transformed_code(diff_content, 'Diff')                              # 'Diff' argument is not used for now
         return transformed_type
 
     def deobfuscate_code(self, content: str, package_name: str, version: str, file_name: str):

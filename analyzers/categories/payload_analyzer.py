@@ -21,11 +21,20 @@ class PayloadAnalyzer:
     
     SHELL_COMMANDS_PATTERNS: List[Pattern] = [
         # obj.exec(command, args)
-        re.compile(r'(\w+)?.?exec\s*\(\s*(\w+)\s*,\s*(\w+)\s*\)', re.IGNORECASE),
         # Bun is a JavaScript runtime similar to Node.js, and it has a function to execute system commands
         # await Bun.$`command`
-        re.compile(r'(\w+)?\s*Bun\.\$\s*\`[\s\S]*?\`', re.IGNORECASE),
         # Not to be confused with RegExp.exec(), which is a method for searching for patterns in a string
+        # re.compile(r'(\w+)?.?exec\s*\(\s*(\w+)\s*,\s*(\w+)\s*\)', re.IGNORECASE),
+        # re.compile(r'(\w+)?\s*Bun\.\$\s*\`[\s\S]*?\`', re.IGNORECASE),
+        re.compile(
+            r'(?:'
+            #r'(\w+)?.?exec\s*\(\s*(\w+)\s*,\s*(\w+)\s*\)|'                                     # Original
+            #r'(?!(?:RegExp|re|regexp)\.exec\b)(\w+)?\.?exec\s*\(\s*(\w+)\s*,\s*(\w+)\s*\)|'    # Explicit avoid matching RegExp.exec
+            r'(?:child_process|exec|spawn|shell)\.exec\s*\(\s*(\w+)\s*,\s*(\w+)\s*\)|'          # Whitelist
+            r'(\w+)?\s*Bun\.\$\s*\`[\s\S]*?\`'
+            r')',
+            re.IGNORECASE
+        )
     ]
 
     PREINSTALL_PATTERNS: List[Pattern] = [
@@ -33,7 +42,7 @@ class PayloadAnalyzer:
         # [^"]*  Any text between quotes
     ]
 
-    def analyze(self, content: str, file_diff_additions: list[str]) -> Dict:
+    def analyze(self, content: str, package_info: Dict) -> Dict:
         metrics = {
             'timing_delays_count': 0,
             'list_timing_delays': [],
@@ -42,15 +51,15 @@ class PayloadAnalyzer:
             'shell_commands_count': 0,
             'list_shell_commands': [],
             'file_size_bytes': len(content.encode('utf-8')),
-            'preinstall_scripts_count': 0,
+            'preinstall_scripts': False,
             'list_preinstall_scripts': [],
-            'presence_of_suspicious_dependency': 0,
+            #'presence_of_suspicious_dependency': 0,
         }
         
         metrics['timing_delays_count'], metrics['list_timing_delays'] = UtilsForAnalyzer.detect_patterns(content, self.TIMING_DELAYS_PATTERNS)
         metrics['eval_count'], metrics['eval_list'] = UtilsForAnalyzer.detect_patterns(content, self.EVAL_PATTERNS)
         metrics['shell_commands_count'], metrics['list_shell_commands'] = UtilsForAnalyzer.detect_patterns(content, self.SHELL_COMMANDS_PATTERNS)
-        if len(file_diff_additions) > 0:
-            metrics['preinstall_scripts_count'], metrics['list_preinstall_scripts'] = UtilsForAnalyzer.detect_patterns('\n'.join(file_diff_additions), self.PREINSTALL_PATTERNS)
+        if(package_info['file_name'] == 'package.json' ):
+            metrics['preinstall_scripts'], metrics['list_preinstall_scripts'] = UtilsForAnalyzer.detect_patterns(content, self.PREINSTALL_PATTERNS)
 
         return metrics

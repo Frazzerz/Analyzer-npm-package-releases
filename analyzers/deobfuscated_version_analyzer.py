@@ -37,7 +37,6 @@ class DeobfuscatedAnalyzer:
                 all_metrics.extend(curr_metrics)
                 print(f"    Analyzed {len(curr_metrics)} deobfuscated files")
                 
-                #if prev_metrics:
                 changes = self.version_comparator.compare_versions(prev_metrics, curr_metrics)
                 all_changes.extend(changes)
 
@@ -86,7 +85,6 @@ class DeobfuscatedAnalyzer:
                 file_metrics = self.code_analyzer.analyze_file(
                     content, 
                     package_info=package_info, 
-                    release_info="deobfuscated",
                     file_diff_additions='',
                     file_diff_deletions=''
                 )

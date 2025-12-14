@@ -17,8 +17,8 @@ class FileMetrics:
     new_code_transformed_type: str
     platform_detections_count: int
     list_platform_detections: List[str]
-    concatenated_elements_count: int
-    list_concatenated_elements: List[str]
+    #concatenated_elements_count: int
+    #list_concatenated_elements: List[str]
     
     # PAYLOAD DELIVERY & EXECUTION
     timing_delays_count: int
@@ -28,43 +28,45 @@ class FileMetrics:
     shell_commands_count: int
     list_shell_commands: List[str]
     file_size_bytes: int
-    preinstall_scripts_count: int
+    preinstall_scripts: bool
     list_preinstall_scripts: List[str]
-    presence_of_suspicious_dependency: int
+    #presence_of_suspicious_dependency: int
 
     # DATA EXFILTRATION & C2
     scan_functions_count: int
     list_scan_functions: List[str]
     sensitive_elements_count: int
     list_sensitive_elements: List[str]
-    data_transmission_count: int
-    list_data_transmission: List[str]
+    #data_transmission_count: int
+    #list_data_transmission: List[str]
     
     # CRYPTOJACKING & WALLET THEFT
     crypto_addresses: int
     list_crypto_addresses: List[str]
-    wallet_detection: int
     cryptocurrency_name: int
+    wallet_detection: int
+    wallet_detection_list: List[str]
     replaced_crypto_addresses: int
+    replaced_crypto_addresses_list: List[str]
     hook_provider: int
 
-    # ACCOUNT COMPROMISE
+    # ACCOUNT COMPROMISE & RELEASE INTEGRITY ANOMALIES
     npm_maintainers: int
     npm_maintainers_nicks: List[str]
     npm_maintainers_emails: List[str]
-    npm_maintainer_pubblished_release: str
-    github_contributors: int
-    github_contributors_nicks: List[str]
-    github_contributors_emails: List[str]
-    github_contributors_published_release: str
-    github_owners: str
-
-    # RELEASE INTEGRITY ANOMALIES
+    npm_maintainer_published_release: str
+    #github_contributors: int
+    #github_contributors_nicks: List[str]
+    #github_contributors_emails: List[str]
+    #github_publisher_release: str
+    #github_repository_owner: str
+    npm_hash_commit: str
+    github_hash_commit: str
+    #npm_hash_file: str
+    #github_hash_file: str
     npm_release_date: str
-    github_release_date: str
-    hash_github: str
-    hash_npm: str
-    malicious_issues: int
+    #'github_release_date': str
+    #malicious_issues: int
 
     changes_additions: List[str]
     changes_deletions: List[str]

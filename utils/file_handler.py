@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import List
 import json
 import shutil
+import os
 class FileHandler:
     """Handles file and directory operations"""
     
@@ -22,13 +23,29 @@ class FileHandler:
     
     @staticmethod
     def get_all_files(directory: Path) -> List[Path]:
-        """Find all files in directory (recursive) excluding .git and node_modules directories"""
-        exclude = {'.git', 'node_modules', '.editorconfig', '.npmrc', '.gitattributes', '.github', 'license'}
-        files = []
-        for file in directory.rglob('*'):
-            if file.is_file():
-                if not any(exc in file.parts for exc in exclude):
-                    files.append(file)
+        """Find all files in directory (recursive) excluding certain directories, files and extensions."""
+        # Excluded: Also auto-generated file (like yarn.lock)
+        # not excluded: README.md, package.json, all .js .mjs .ts .cjs .js.map files
+        exclude_dirs = {'.git', 'node_modules', '.github', '__tests__', 'test', 'tests'}
+        exclude_files = {
+            'LICENSE', '.npmrc', '.editorconfig', '.gitattributes', 'license',
+            '.eslintrc', '.prettierrc', 'CHANGELOG.md', '.eslintignore', 'yarn.lock', '.gitignore'
+        }
+        exclude_suffixes = ('.d.ts', '.d.ts.map')
+
+        files: List[Path] = []
+        directory_str = str(directory)
+        for root, dirs, filenames in os.walk(directory_str):
+            # dirs contains names (not full paths)
+            dirs[:] = [d for d in dirs if d not in exclude_dirs]
+            for name in filenames:
+                if name in exclude_files:
+                    continue
+                if name.endswith(exclude_suffixes):
+                    continue
+
+                files.append(Path(root) / name)
+
         return files
     
     @staticmethod

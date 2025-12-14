@@ -106,7 +106,7 @@ class LocalVersionAnalyzer:
                 )
                 content = self.file_handler.read_file(file_path)
                 
-                 # Calcolo del diff con la versione precedente
+                 # Calculating the diff with the previous version
                 previous_content = self._previous_contents.get(rel_path)
                 diffs_additions, diffs_deletions = CalculateDiffs.calculate_file_diffs(previous_content, content)
 
@@ -121,7 +121,6 @@ class LocalVersionAnalyzer:
                 file_metrics = self.code_analyzer.analyze_file(
                     content, 
                     package_info=package_info, 
-                    release_info="local",
                     file_diff_additions=diffs_additions,
                     file_diff_deletions=diffs_deletions
                 )

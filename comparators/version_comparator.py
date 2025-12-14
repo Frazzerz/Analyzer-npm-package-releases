@@ -12,7 +12,6 @@ class VersionComparator:
         self.data_exfiltration_comparator = DataExfiltrationComparator()
         self.cryptojacking_comparator = CryptojackingComparator()
         self.account_comparator = AccountComparator()
-        self.release_comparator = ReleaseComparator()
     
     def compare_versions(self, prev_metrics: List[FileMetrics], curr_metrics: List[FileMetrics]) -> List[RedFlagChanges]:
         """Compare two versions and return red flags"""
@@ -32,7 +31,6 @@ class VersionComparator:
             red_flags.update(self.data_exfiltration_comparator.compare(prev, curr))
             red_flags.update(self.cryptojacking_comparator.compare(prev, curr))
             red_flags.update(self.account_comparator.compare(prev, curr))
-            red_flags.update(self.release_comparator.compare(prev, curr))
             
             change = RedFlagChanges(
                 package=curr.package,

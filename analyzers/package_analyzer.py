@@ -34,14 +34,14 @@ class PackageAnalyzer:
             all_changes.extend(git_changes)
         else:
             print(f"Unable to analyze {package_name} - Git repository not available")
-
+        
         # If requested, analyze local versions
         if self.include_local:
             self.local_analyzer.setup_local_versions(package_name)
             local_metrics, local_changes = self.local_analyzer.analyze_local_versions(package_name)
             all_metrics.extend(local_metrics)
             all_changes.extend(local_changes)
-
+        
         # If deobfuscated files were created during analysis, analyze them as well
         deobf_dir = Path('deobfuscated_files') / package_name
         if deobf_dir.exists() and deobf_dir.is_dir():
