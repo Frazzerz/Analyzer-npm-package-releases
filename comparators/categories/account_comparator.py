@@ -1,12 +1,14 @@
 from typing import Dict
 from models import FileMetrics
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 class AccountComparator:
     """Compare account compromise & release integrity anomalies metrics to identify red flags"""
     
     def compare(self, prev: FileMetrics, curr: FileMetrics) -> Dict:
         
+        UTC_MIN_DATETIME = datetime.min.replace(tzinfo=timezone.utc)
+
         # New file
         if prev is None:
             return {
@@ -36,6 +38,6 @@ class AccountComparator:
                 #'npm_before_github': curr.npm_release_date < curr.github_release_date,      # test
                 #'hash_mismatch_file_between_npm_and_github': False,
                 #'anomalous_time': False,
-                'package_reactivation': (curr.npm_release_date - prev.npm_release_date) > timedelta(days=365*2),    # More than 2 years gap
+                'package_reactivation': (curr.npm_release_date - prev.npm_release_date) > timedelta(days=365*2) and prev.npm_release_date != UTC_MIN_DATETIME,    # More than 2 years gap
                 #'dependency_issues_keywords': False
             }

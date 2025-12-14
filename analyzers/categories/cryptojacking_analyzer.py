@@ -17,29 +17,37 @@ class CryptojackingAnalyzer:
         ##'solana2': re.compile(r'((?<!\w)[3][1-9A-HJ-NP-Za-km-z]{35,44})')
         ##'solana3': re.compile(r'((?<!\w)[1][1-9A-HJ-NP-Za-km-z]{35,44})')
         re.compile(
-            r'(?:'
-            r'\b0x[a-fA-F0-9]{40}\b|'                               # Ethereum
-            r'\b1[a-km-zA-HJ-NP-Z1-9]{25,34}\b|'                    # Bitcoin Legacy
-            r'\b3[a-km-zA-HJ-NP-Z1-9]{25,34}\b|'                    # Bitcoin Segwit P2SH
-            r'\bc1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{11,71}\b|'     # Bitcoin Segwit Bech32
-            r'bitcoincash:[qp][a-zA-Z0-9]{41}'                      # Bitcoin Cash
-            r')'
+            r'(?<![\w\-/_])(?:'
+            r'0x[a-fA-F0-9]{40}|'                               # Ethereum
+            r'1[a-km-zA-HJ-NP-Z1-9]{25,34}|'                    # Bitcoin Legacy
+            r'3[a-km-zA-HJ-NP-Z1-9]{25,34}|'                    # Bitcoin Segwit P2SH
+            r'c1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{11,71}|'     # Bitcoin Segwit Bech32
+            r'bitcoincash:[qp][a-zA-Z0-9]{41}'                  # Bitcoin Cash
+            r')(?![\w\-/_])'
         ),
         # \b \b word boundaries, find exact word
-        # (?<!\w) ensures the preceding character is not a word character
+        # (?<![\w\-/_]) ensures the preceding character is not a word character and not - or / or _
+        # (?![\w\-/_]) ensures the following character is not ...
         # [number] specific starting characters (number) for certain crypto addresses
     ]
 
     CRYPTOCURRENCY_NAMES: List[Pattern] = [
         # ethereum, eth, bitcoin, btc, bitcoinLegacy, bitcoinSegwit, bitcoin cash, bch
-        re.compile(r'(?:\bethereum\b|\beth\b|\bbitcoin\b|\bbtc\b|\bbitcoinLegacy\b|\bbitcoinSegwit\b|\bbitcoin[-\s]?cash\b|\bbch\b)', re.IGNORECASE),
+        re.compile(
+            r'(?<![\w\-/_])(?:'
+            r'ethereum|bitcoin|bitcoin[-\s]?cash|'
+            r'bitcoinlegacy|bitcoinsegwit|'
+            r'(?:eth|btc|bch)'
+            r')(?![\w\-/_])',
+            re.IGNORECASE
+        )
     ]
 
     WALLET_DETECTION_PATTERNS: List[Pattern] = [
         re.compile(
             r'(?:'
             # typeof windows != 'undefined' or ethereum.isMetaMask 
-            r'typeof\s*(?:window(?:\.ethereum)?)\s*!==?\s*[\'"]undefined[\'"]|'
+            r'typeof\s+window\.ethereum\s*!==?\s*[\'"]undefined[\'"]|'
             r'ethereum\.isMetaMask|'
             # window.ethereum.request
             r'(?:window\.)?ethereum\.request'

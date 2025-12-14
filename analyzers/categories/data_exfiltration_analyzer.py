@@ -29,10 +29,23 @@ class DataExfiltrationAnalyzer:
         
         # Hostname, Userinfo, Ssh, Aws, Secret, Access, Token, Database, Google, API Key, Env, Username, Email, Password, Passphrase
         # No more Client Auth Private env
-        re.compile(r'\w*[._-]?(?:host[-_]?name|userinfo|(?:ssh|aws|secret|access|token)s?|database|google|api[-_]?keys?usernames?|[e]?[-]?mails?|(?:pass(word|phrase))s?)[._-]?\w*', re.IGNORECASE),
+        # 10033 e 15969
+        #re.compile(r'\w*[._-]?(?:host[-_]?name|userinfo|(?:ssh|aws|secret|access|token)s?|database|google|api[-_]?keys?usernames?|[e]?[-]?mails?|(?:pass(word|phrase))s?)[._-]?\w*', re.IGNORECASE),
+        
         # [] indicate character set
         # () capturing group
         # \w alphanumeric character or underscore. This allows for characters attached to “access”
+        # password, passphrase, secret, token, apikey, awssecret, sshkey, privatekeys, database/google/aws+password/secret/key
+        re.compile(
+            r'(?<![A-Za-z0-9-])(?:'
+            r'passwords?|passphrases?|'
+            r'secrets?|access[-_]?tokens?|'
+            r'api[-_]?keys?|aws[-_]?secrets?|'
+            r'ssh[-_]?keys?|private[-_]?keys?|'
+            r'(?:database|google|aws)[-_]?(?:password|secret|key)'
+            r')(?![A-Za-z0-9])',
+            re.IGNORECASE
+        ),
     ]
 
     def analyze(self, content: str) -> Dict:

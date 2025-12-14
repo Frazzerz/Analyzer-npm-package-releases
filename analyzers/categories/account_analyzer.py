@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 class AccountAnalyzer:
     """Analyzes account compromise & release integrity anomalies"""
     
+    UTC_MIN_DATETIME = datetime.min.replace(tzinfo=timezone.utc)
+
     def __init__(self):
         self.npm_client = NPMClient()
         # Manual cache with limit (FIFO)
@@ -45,8 +47,8 @@ class AccountAnalyzer:
             'github_hash_commit': '',
             #'npm_hash_file': '',               # Placeholder
             #'github_hash_file': '',            # Placeholder
-            'npm_release_date': datetime.min,       # missing date
-            #'github_release_date': datetime.min,    # missing date
+            'npm_release_date': self.UTC_MIN_DATETIME,        # missing date
+            #'github_release_date': self.UTC_MIN_DATETIME,    # missing date
             #'malicious_issues': 0              # Placeholder
         }
         
@@ -78,10 +80,9 @@ class AccountAnalyzer:
             return None
         return tag_name
     
-    def _parse_date(self, date_str: str) -> Optional[datetime]:
-        """Parse ISO date and convert to UTC+0"""
+    def _parse_date(self, date_str: str) -> datetime:
         if not date_str:
-            return None
+            return self.UTC_MIN_DATETIME
         try:
             # Handle 'Z' suffix for UTC
             if date_str.endswith("Z"):
@@ -99,7 +100,7 @@ class AccountAnalyzer:
 
         except Exception as e:
             print(f"Error parsing date {date_str}: {e}")
-            return None
+            return self.UTC_MIN_DATETIME
     
     def _get_npm_metrics(self, npm_data: Dict, version: str) -> tuple[int, list, list, str, str, str]:
         """Returns all NPM metrics:
@@ -108,7 +109,7 @@ class AccountAnalyzer:
         try:
             # Check if version exists in npm data
             if 'versions' not in npm_data or version not in npm_data['versions']:
-                return 0, [], [], '', '', ''    # Empty content
+                return 0, [], [], '', '', self.UTC_MIN_DATETIME  # Empty content
             
             version_data = npm_data['versions'][version]
             
@@ -125,7 +126,7 @@ class AccountAnalyzer:
             npm_hash_commit = version_data.get('gitHead', "")
             
             # Get release time
-            release_time = ""
+            release_time = self.UTC_MIN_DATETIME  # missing date
             if 'time' in npm_data and version in npm_data['time']:
                 release_time = self._parse_date(npm_data['time'][version])
             
@@ -133,7 +134,7 @@ class AccountAnalyzer:
             
         except Exception as e:
             print(f"Error getting NPM metrics: {e}")
-            return 0, [], [], '', '', ''        # Empty content
+            return 0, [], [], '', '', self.UTC_MIN_DATETIME  # Empty content
 
     def _get_github_metrics(self, repo_path: str, version: str) -> str:
         """Returns all GitHub metrics: for now only commit_hash"""

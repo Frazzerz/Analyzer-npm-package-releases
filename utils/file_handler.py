@@ -31,7 +31,8 @@ class FileHandler:
             'LICENSE', '.npmrc', '.editorconfig', '.gitattributes', 'license',
             '.eslintrc', '.prettierrc', 'CHANGELOG.md', '.eslintignore', 'yarn.lock', '.gitignore'
         }
-        exclude_suffixes = ('.d.ts', '.d.ts.map')
+        exclude_suffixes = ('.d.ts', '.d.ts.map', '.png', '.jpg', '.jpeg', '.ai', '.svg', '.gif', 'ico', '.eot', '.ttf',
+                             '.woff', '.woff2', '.mp4', '.mp3', '.mov',)
 
         files: List[Path] = []
         directory_str = str(directory)
