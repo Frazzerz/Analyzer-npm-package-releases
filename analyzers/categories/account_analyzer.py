@@ -1,17 +1,36 @@
-from typing import Dict
+from typing import Dict, Optional
 from git import Repo
 from utils import NPMClient
-from typing import Optional
 from datetime import datetime, timezone
+
 class AccountAnalyzer:
     """Analyzes account compromise & release integrity anomalies"""
     
     def __init__(self):
         self.npm_client = NPMClient()
-        self._package_cache = {}
+        # Manual cache with limit (FIFO)
+        self._npm_cache = {}
+        self._cache_max_size = 6
+    
+    def _get_npm_data_cached(self, package_name: str) -> Optional[Dict]:
+        """Fetch NPM data with manual FIFO caching"""
+        # If it's already cached, it will return immediately.
+        if package_name in self._npm_cache:
+            return self._npm_cache[package_name]
+        
+        # Otherwise, fetch from NPM
+        npm_data = self.npm_client.get_npm_package_data(package_name)
+        
+        # If the cache is full, remove the oldest (first inserted)
+        if len(self._npm_cache) >= self._cache_max_size:
+            oldest_key = next(iter(self._npm_cache))
+            del self._npm_cache[oldest_key]
+        
+        # Add to cache
+        self._npm_cache[package_name] = npm_data
+        return npm_data
     
     def analyze(self, package_info: Dict) -> Dict:
-
         metrics = {
             'npm_maintainers': 0,
             'npm_maintainers_nicks': [],
@@ -34,19 +53,14 @@ class AccountAnalyzer:
         #return metrics
 
         # For local versions or deobfuscated versions
-        if not package_info or package_info.get('info') == "local" or  package_info.get('info') == "deobfuscated":
+        if not package_info or package_info.get('info') in ("local", "deobfuscated"):
             return metrics
         
         package_name = package_info.get('name', '')
         version = package_info.get('version', '')
         git_repo_path = package_info.get('git_repo_path')
         
-        # If the package is NOT cached, fetch it from NPM
-        if package_name not in self._package_cache:
-            self._package_cache[package_name] = self.npm_client.get_npm_package_data(package_name)
-        
-        # Use cached data (whether just added or already present)
-        npm_data = self._package_cache[package_name]
+        npm_data = self._get_npm_data_cached(package_name)
         if not npm_data:
             return metrics
         

@@ -1,10 +1,9 @@
 from pathlib import Path
 from typing import List, Tuple
 from git import Repo
-
 from models import *
 from comparators import VersionComparator
-from utils import FileHandler, CalculateDiffs
+from utils import FileHandler, CalculateDiffs, synchronized_print
 from .code_analyzer import CodeAnalyzer
 
 class GitVersionAnalyzer:
@@ -32,7 +31,8 @@ class GitVersionAnalyzer:
         repo_path = Path(repo.working_tree_dir)
 
         for i, tag in enumerate(tags, 1):
-            print(f"  [{i}/{len(tags)}] Tag {tag.name}")
+            #print(f"  [{i}/{len(tags)}] Tag {tag.name}")
+            synchronized_print(f"  [{i}/{len(tags)}] Analyzing {package_name} - Version: {tag.name}")
             try:
                 repo.git.checkout(tag.name, force=True)
                 curr_metrics = self._analyze_version(package_name, tag.name, repo_path)
@@ -43,6 +43,10 @@ class GitVersionAnalyzer:
                 all_changes.extend(changes)
 
                 prev_metrics = curr_metrics
+
+                # Clean up previous contents for next version
+                self._previous_contents.clear()
+                
             except Exception as e:
                 print(f"Error analyzing tag {tag.name}: {e}")
 

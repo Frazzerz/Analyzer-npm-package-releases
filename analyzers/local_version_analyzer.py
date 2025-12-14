@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from models import *
 from comparators import VersionComparator
-from utils import FileHandler, LocalVersionManager, CalculateDiffs
+from utils import FileHandler, LocalVersionManager, CalculateDiffs, synchronized_print
 from .code_analyzer import CodeAnalyzer
 
 def version_key(tag: str):
@@ -71,9 +71,11 @@ class LocalVersionAnalyzer:
 
         sorted_versions = sorted(self._local_versions.keys(), key=version_key)
 
-        for version in sorted_versions:
+        #for version in sorted_versions:
+        for i, version in enumerate(sorted_versions, 1):
             package_dir = self._local_versions[version]
-            print(f"  Local version {version}")
+            #print(f"  Local version {version}")
+            synchronized_print(f"  [{i}/{len(sorted_versions)}] Analyzing {package_name} - Local version: {version}")
             try:
                 curr_metrics = self._analyze_version(package_name, version, package_dir)
                 all_metrics.extend(curr_metrics)
@@ -83,6 +85,10 @@ class LocalVersionAnalyzer:
                 all_changes.extend(changes)
 
                 prev_metrics = curr_metrics
+
+                # Clean up previous contents for next version
+                self._previous_contents.clear()
+
             except Exception as e:
                 print(f"Error analyzing local version {version}: {e}")
 

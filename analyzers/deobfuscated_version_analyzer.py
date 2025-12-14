@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from models import *
 from comparators import VersionComparator
-from utils import FileHandler
+from utils import FileHandler, synchronized_print
 from .code_analyzer import CodeAnalyzer
 
 class DeobfuscatedAnalyzer:
@@ -28,9 +28,11 @@ class DeobfuscatedAnalyzer:
         prev_metrics = []
         sorted_versions = sorted(version_dirs.keys())
 
-        for version in sorted_versions:
+        #for version in sorted_versions:
+        for i, version in enumerate(sorted_versions, 1):
             version_dir = version_dirs[version]
-            print(f"  Analyzing version: {version}")
+            #print(f"  Analyzing version: {version}")
+            synchronized_print(f"  [{i}/{len(sorted_versions)}] Analyzing {package_name} - Deobfuscated version: {version}")
             
             try:
                 curr_metrics = self._analyze_version(package_name, version, version_dir)
