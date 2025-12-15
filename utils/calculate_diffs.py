@@ -4,6 +4,7 @@ import hashlib
 
 class CalculateDiffs:
     """Calculates the differences (additions and removals) between versions of a file"""
+    '''No more needed'''
     
     @staticmethod
     def calculate_file_diffs(old_content: Optional[str], new_content: Optional[str]) -> Tuple[list[str], list[str]]:

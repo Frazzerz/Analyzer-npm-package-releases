@@ -1,8 +1,6 @@
 from pathlib import Path
-from typing import List, Tuple
-
+from typing import List
 from models import *
-from comparators import VersionComparator
 from utils import FileHandler, synchronized_print
 from .code_analyzer import CodeAnalyzer
 
@@ -12,20 +10,17 @@ class DeobfuscatedAnalyzer:
     def __init__(self, code_analyzer: CodeAnalyzer, file_handler: FileHandler):
         self.code_analyzer = code_analyzer
         self.file_handler = file_handler
-        self.version_comparator = VersionComparator()
 
-    def analyze_deobfuscated_versions(self, package_name: str, deobf_dir: Path) -> Tuple[List[FileMetrics], List[RedFlagChanges]]:
+    def analyze_deobfuscated_versions(self, package_name: str, deobf_dir: Path) -> List[FileMetrics]:
         """Analyze all deobfuscated files for a package"""
         all_metrics = []
-        all_changes = []
         
         version_dirs = self._get_deobfuscated_version_dirs(deobf_dir)
         if not version_dirs:
-            return [], []
+            return []
 
         print(f"Found deobfuscated files for package {package_name} in {len(version_dirs)} versions, analyzing...")
 
-        prev_metrics = []
         sorted_versions = sorted(version_dirs.keys())
 
         #for version in sorted_versions:
@@ -38,15 +33,11 @@ class DeobfuscatedAnalyzer:
                 curr_metrics = self._analyze_version(package_name, version, version_dir)
                 all_metrics.extend(curr_metrics)
                 print(f"    Analyzed {len(curr_metrics)} deobfuscated files")
-                
-                changes = self.version_comparator.compare_versions(prev_metrics, curr_metrics)
-                all_changes.extend(changes)
 
-                prev_metrics = curr_metrics
             except Exception as e:
                 print(f"Error analyzing deobfuscated version {version}: {e}")
                 
-        return all_metrics, all_changes
+        return all_metrics
 
     def _get_deobfuscated_version_dirs(self, deobf_dir: Path) -> dict:
         """Find all version subdirectories that contain deobfuscated files"""
@@ -86,17 +77,13 @@ class DeobfuscatedAnalyzer:
 
                 file_metrics = self.code_analyzer.analyze_file(
                     content, 
-                    package_info=package_info, 
-                    file_diff_additions='',
-                    file_diff_deletions=''
+                    package_info=package_info
                 )
 
                 metrics = FileMetrics(
                     package=package_name,
                     version=version,
                     file_path=str(file_path.relative_to(version_dir)),
-                    changes_additions='',
-                    changes_deletions='',
                     **file_metrics
                 )
                 metrics_list.append(metrics)

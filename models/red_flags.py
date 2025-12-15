@@ -4,7 +4,7 @@ from dataclasses import dataclass
 class RedFlagChanges:
     """Changes between versions (introduction of red flags)"""
     package: str
-    file_path: str
+    #file_path: str
     version_from: str
     version_to: str
     

@@ -68,5 +68,5 @@ class FileMetrics:
     #'github_release_date': str
     #malicious_issues: int
 
-    changes_additions: List[str]
-    changes_deletions: List[str]
+    #changes_additions: List[str]
+    #changes_deletions: List[str]

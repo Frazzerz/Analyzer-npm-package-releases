@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 
 from models import *
 from .categories import *
@@ -12,7 +12,7 @@ class VersionComparator:
         self.data_exfiltration_comparator = DataExfiltrationComparator()
         self.cryptojacking_comparator = CryptojackingComparator()
         self.account_comparator = AccountComparator()
-    
+    '''
     def compare_versions(self, prev_metrics: List[FileMetrics], curr_metrics: List[FileMetrics]) -> List[RedFlagChanges]:
         """Compare two versions and return red flags"""
         changes = []
@@ -42,3 +42,23 @@ class VersionComparator:
             changes.append(change)
         
         return changes
+    '''
+    def compare_tags(self, prev_tag_metrics: Dict, curr_tag_metrics: Dict, package: str, version_from: str, version_to: str) -> RedFlagChanges:
+        """Compare two tags (versions) and return red flags"""
+
+        red_flags = {}
+        
+        red_flags.update(self.evasion_comparator.compare(prev_tag_metrics, curr_tag_metrics))
+        red_flags.update(self.payload_comparator.compare(prev_tag_metrics, curr_tag_metrics))
+        red_flags.update(self.data_exfiltration_comparator.compare(prev_tag_metrics, curr_tag_metrics))
+        red_flags.update(self.cryptojacking_comparator.compare(prev_tag_metrics, curr_tag_metrics))
+        red_flags.update(self.account_comparator.compare(prev_tag_metrics, curr_tag_metrics))
+        
+        change = RedFlagChanges(
+            package=package,
+            version_from=version_from,
+            version_to=version_to,
+            **red_flags
+        )
+        
+        return change

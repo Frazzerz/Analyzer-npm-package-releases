@@ -1,9 +1,8 @@
 from pathlib import Path
-from typing import List, Tuple
-
+from typing import List
 from models import *
 from comparators import VersionComparator
-from utils import FileHandler, LocalVersionManager, CalculateDiffs, synchronized_print
+from utils import FileHandler, LocalVersionManager, synchronized_print
 from .code_analyzer import CodeAnalyzer
 
 def version_key(tag: str):
@@ -33,9 +32,7 @@ class LocalVersionAnalyzer:
         self.code_analyzer = code_analyzer
         self.file_handler = file_handler
         self.local_version_manager = LocalVersionManager(local_versions_dir)
-        self.version_comparator = VersionComparator()
         self._local_versions = {}
-        self._previous_contents = {}
 
     def setup_local_versions(self, package_name: str):
         """Sets up local versions for analysis."""
@@ -59,15 +56,13 @@ class LocalVersionAnalyzer:
             except Exception as e:
                 print(f"Error extracting {local_version['filename']}: {e}")
 
-    def analyze_local_versions(self, package_name: str) -> Tuple[List[FileMetrics], List[RedFlagChanges]]:
+    def analyze_local_versions(self, package_name: str) -> List[FileMetrics]:
         """Analyzes all local versions of the package."""
         if not self._local_versions:
-            return [], []
+            return []
 
         print(f"Analyzing {len(self._local_versions)} local versions")
         all_metrics = []
-        all_changes = []
-        prev_metrics = []
 
         sorted_versions = sorted(self._local_versions.keys(), key=version_key)
 
@@ -81,18 +76,10 @@ class LocalVersionAnalyzer:
                 all_metrics.extend(curr_metrics)
                 print(f"    Analyzed {len(curr_metrics)} files")
 
-                changes = self.version_comparator.compare_versions(prev_metrics, curr_metrics)
-                all_changes.extend(changes)
-
-                prev_metrics = curr_metrics
-
-                # Clean up previous contents for next version
-                self._previous_contents.clear()
-
             except Exception as e:
                 print(f"Error analyzing local version {version}: {e}")
 
-        return all_metrics, all_changes
+        return all_metrics
 
     def _analyze_version(self, package_name: str, version: str, package_dir: Path) -> List[FileMetrics]:
         """Analyzes all files of a specific local version."""
@@ -102,7 +89,6 @@ class LocalVersionAnalyzer:
         if (package_dir / 'package').exists():
             actual_package_dir = package_dir / 'package'
 
-        #js_files = self.file_handler.get_js_files(actual_package_dir)
         files = self.file_handler.get_all_files(actual_package_dir)
 
         for file_path in files:
@@ -111,11 +97,6 @@ class LocalVersionAnalyzer:
                     str(file_path.relative_to(actual_package_dir))
                 )
                 content = self.file_handler.read_file(file_path)
-                
-                 # Calculating the diff with the previous version
-                previous_content = self._previous_contents.get(rel_path)
-                diffs_additions, diffs_deletions = CalculateDiffs.calculate_file_diffs(previous_content, content)
-
                 
                 package_info = {
                     'name': package_name,
@@ -126,21 +107,16 @@ class LocalVersionAnalyzer:
 
                 file_metrics = self.code_analyzer.analyze_file(
                     content, 
-                    package_info=package_info, 
-                    file_diff_additions=diffs_additions,
-                    file_diff_deletions=diffs_deletions
+                    package_info=package_info
                 )
 
                 metrics = FileMetrics(
                     package=package_name,
                     version=version,
                     file_path=rel_path,
-                    changes_additions= diffs_additions,
-                    changes_deletions= diffs_deletions,
                     **file_metrics
                 )
                 metrics_list.append(metrics)
-                self._previous_contents[rel_path] = content
             except Exception as e:
                 print(f"Error analyzing {file_path}: {e}")
 

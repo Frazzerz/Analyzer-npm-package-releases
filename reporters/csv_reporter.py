@@ -1,6 +1,6 @@
 import csv
 from pathlib import Path
-from typing import List, Any
+from typing import List, Any, Dict
 from dataclasses import asdict
 
 class CSVReporter:
@@ -34,3 +34,28 @@ class CSVReporter:
             changes,
             empty_message="No red flags to save in {output_path}"
         )
+    
+    @staticmethod
+    def save_aggregate_metrics(output_path: Path, aggregate_metrics: Dict[str, Dict[str, int]]) -> None:
+        """Save aggregate metrics dictionary to CSV"""
+        if not aggregate_metrics:
+            print(f"No aggregate metrics to save in {output_path}")
+            return
+        
+        # Convert the nested dictionary to a list of flat dictionaries
+        rows = []
+        for version, metrics in aggregate_metrics.items():
+            row = {'version': version}
+            row.update(metrics)
+            rows.append(row)
+        
+        if not rows:
+            print(f"No aggregate metrics to save in {output_path}")
+            return
+        
+        with open(output_path, 'w', newline='', encoding='utf-8') as f:
+            # Get fieldnames from the first row
+            fieldnames = rows[0].keys()
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)

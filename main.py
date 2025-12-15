@@ -3,9 +3,9 @@ from multiprocessing import cpu_count
 import sys
 from pathlib import Path
 from datetime import datetime
-
-from runner import run_tasks
 from utils import TeeOutput, FileHandler
+from worker import analyze_single_package
+import time
 
 def main():
     parser = argparse.ArgumentParser(description='Analyzer npm package releases')
@@ -48,11 +48,16 @@ def main():
 
         FileHandler.ensure_directory(Path(args.output))
 
-        # Prepare tasks
+        start_time = time.time()
+        results = []
         total_packages = len(packages)
-        tasks = [(pkg, args.output, i+1, total_packages, args.local, args.local_dir) for i, pkg in enumerate(packages)]
-
-        results, total_time = run_tasks(tasks, workers=args.workers)
+        
+        for i, pkg in enumerate(packages):
+            task = (pkg, args.output, i+1, total_packages, args.local, args.local_dir, args.workers)
+            result = analyze_single_package(task)
+            results.append(result)
+        
+        total_time = time.time() - start_time
 
         print('\n' + '=' * 50)
         print('ANALYSIS COMPLETED')

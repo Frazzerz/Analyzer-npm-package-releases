@@ -5,7 +5,7 @@ from utils import synchronized_print
 
 def run_tasks(tasks, workers):
     """Coordinator who is responsible for starting multiple processes and distributing tasks. Multiprocessing logic"""
-    
+    "No more needed"
     start_time = time.time()
     results = []
     synchronized_print(f"Starting processing with {workers} worker(s)...")
