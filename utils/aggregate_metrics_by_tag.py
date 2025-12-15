@@ -7,14 +7,12 @@ class AggregateMetricsByTag:
     METRIC_CLASSES = {
         'EVASION_TECHNIQUES': [
             'suspicious_patterns_count',
-            'longest_line_length',
             'platform_detections_count'
         ],
         'PAYLOAD_DELIVERY_EXECUTION': [
             'timing_delays_count',
             'eval_count',
-            'shell_commands_count',
-            'file_size_bytes'
+            'shell_commands_count'
         ],
         'DATA_EXFILTRATION_C2': [
             'scan_functions_count',
@@ -29,6 +27,10 @@ class AggregateMetricsByTag:
         ],
         'ACCOUNT_COMPROMISE': [
             'npm_maintainers'
+        ],
+        'OTHER_METRICS': [
+            'longest_line_length',
+            'file_size_bytes'
         ]
     }
 

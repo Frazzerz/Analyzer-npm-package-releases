@@ -50,7 +50,7 @@ def analyze_single_package(item):
     CSVReporter().save_aggregate_metrics(aggregate_metrics_by_tag_file, aggregate_metrics_by_tag)
     CSVReporter().save_red_flags(flags_file, flags)
 
-    TextReporter().generate_compact_report(pkg_dir / "_report.txt", flags, package)
+    TextReporter().generate_compact_report(summary_file, flags, package)
     GraphReporter().generate_evolution_graphs(pkg_dir, aggregate_metrics_by_tag, package)
 
     # Append save messages to the package file

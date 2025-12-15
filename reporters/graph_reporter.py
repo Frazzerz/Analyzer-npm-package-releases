@@ -1,39 +1,10 @@
 import matplotlib.pyplot as plt
 from pathlib import Path
 from typing import List, Dict
-from collections import defaultdict
-from models import FileMetrics
+from utils import AggregateMetricsByTag
 
 class GraphReporter:
     """Generate evolution graphs for metrics across versions"""
-    
-    METRIC_CLASSES = {
-        'EVASION_TECHNIQUES': [
-            'suspicious_patterns_count',
-            'longest_line_length',
-            'platform_detections_count'
-        ],
-        'PAYLOAD_DELIVERY_EXECUTION': [
-            'timing_delays_count',
-            'eval_count',
-            'shell_commands_count',
-            'file_size_bytes'
-        ],
-        'DATA_EXFILTRATION_C2': [
-            'scan_functions_count',
-            'sensitive_elements_count'
-        ],
-        'CRYPTOJACKING_WALLET_THEFT': [
-            'crypto_addresses',
-            'cryptocurrency_name',
-            'wallet_detection',
-            'replaced_crypto_addresses',
-            'hook_provider'
-        ],
-        'ACCOUNT_COMPROMISE': [
-            'npm_maintainers'
-        ]
-    }
     
     METRIC_LABELS = {
         'suspicious_patterns_count': 'Suspicious Patterns',
@@ -84,15 +55,23 @@ class GraphReporter:
         graphs_dir.mkdir(exist_ok=True)
                 
         # Generate graphs for each metric class
-        for class_name, metric_names in GraphReporter.METRIC_CLASSES.items():
-            GraphReporter._plot_class_metrics(
-                graphs_dir, 
-                sorted_versions, 
-                version_metrics, 
-                metric_names, 
-                package_name, 
-                class_name
-            )
+        for class_name, metric_names in AggregateMetricsByTag.METRIC_CLASSES.items():
+            if class_name == 'OTHER_METRICS':
+                GraphReporter._plot_individual(
+                    graphs_dir,
+                    sorted_versions,
+                    version_metrics,
+                    package_name
+                )
+            else:
+                GraphReporter._plot_class_metrics(
+                    graphs_dir, 
+                    sorted_versions, 
+                    version_metrics, 
+                    metric_names, 
+                    package_name, 
+                    class_name
+                )
     
     @staticmethod
     def _plot_class_metrics(graphs_dir: Path, versions: List[str], 
@@ -194,3 +173,35 @@ class GraphReporter:
         output_file = graphs_dir / f"{class_name.lower()}_normalized.png"
         plt.savefig(output_file, dpi=150, bbox_inches='tight')
         plt.close()
+    
+    @staticmethod
+    def _plot_individual(graphs_dir: Path, versions: List[str], 
+                         version_metrics: Dict, package_name: str) -> None:
+        """Generates individual graphs for each OTHER_METRICS metric."""
+        other_metrics = AggregateMetricsByTag.METRIC_CLASSES.get('OTHER_METRICS', [])
+        
+        for metric_name in other_metrics:
+            values = [version_metrics[v].get(metric_name, 0) for v in versions]
+            
+            plt.figure(figsize=(10, 6))
+            plt.plot(
+                range(len(versions)), 
+                values, 
+                marker='o', 
+                linewidth=2, 
+                markersize=6,
+                color=GraphReporter.COLOR_PALETTE[0],
+                label=GraphReporter.METRIC_LABELS.get(metric_name, metric_name)
+            )
+            
+            plt.xlabel('Version', fontsize=12, fontweight='bold')
+            plt.ylabel('Metric Value', fontsize=12, fontweight='bold')
+            plt.title(f'{package_name} - {GraphReporter.METRIC_LABELS.get(metric_name, metric_name)} Evolution', fontsize=14, fontweight='bold')
+            plt.xticks(range(len(versions)), versions, rotation=45, ha='right')
+            plt.legend(loc='best', fontsize=10, framealpha=0.9)
+            plt.grid(True, alpha=0.3, linestyle='--')
+            plt.tight_layout()
+            
+            output_file = graphs_dir / f"{metric_name}_evolution.png"
+            plt.savefig(output_file, dpi=150, bbox_inches='tight')
+            plt.close()
