@@ -53,13 +53,15 @@ class PayloadAnalyzer:
             'file_size_bytes': len(content.encode('utf-8')),
             'preinstall_scripts': 0,
             'list_preinstall_scripts': [],
-            #'presence_of_suspicious_dependency': 0,
         }
+
+        if not content:
+            return metrics
         
         metrics['timing_delays_count'], metrics['list_timing_delays'] = UtilsForAnalyzer.detect_patterns(content, self.TIMING_DELAYS_PATTERNS)
         metrics['eval_count'], metrics['eval_list'] = UtilsForAnalyzer.detect_patterns(content, self.EVAL_PATTERNS)
         metrics['shell_commands_count'], metrics['list_shell_commands'] = UtilsForAnalyzer.detect_patterns(content, self.SHELL_COMMANDS_PATTERNS)
-        if(package_info['file_name'] == 'package.json' ):
+        if(package_info['file_name'] == 'package.json'):
             metrics['preinstall_scripts'], metrics['list_preinstall_scripts'] = UtilsForAnalyzer.detect_patterns(content, self.PREINSTALL_PATTERNS)
 
         return metrics

@@ -56,7 +56,7 @@ class GraphReporter:
                 
         # Generate graphs for each metric class
         for class_name, metric_names in AggregateMetricsByTag.METRIC_CLASSES.items():
-            if class_name == 'OTHER_METRICS':
+            if class_name == 'OTHER_METRICS' or class_name == 'MAX_METRICS':
                 GraphReporter._plot_individual(
                     graphs_dir,
                     sorted_versions,
@@ -82,6 +82,9 @@ class GraphReporter:
         metrics_data = {}
         for metric_name in metric_names:
             values = [version_metrics[v].get(metric_name, 0) for v in versions]
+            # Skip non-numeric metrics (list[str])
+            if not all(isinstance(v, (int, float)) for v in values):
+                continue
             metrics_data[metric_name] = values
         
         # Create the graph
@@ -179,10 +182,15 @@ class GraphReporter:
                          version_metrics: Dict, package_name: str) -> None:
         """Generates individual graphs for each OTHER_METRICS metric."""
         other_metrics = AggregateMetricsByTag.METRIC_CLASSES.get('OTHER_METRICS', [])
-        
-        for metric_name in other_metrics:
+        max_metrics = AggregateMetricsByTag.METRIC_CLASSES.get('MAX_METRICS', [])
+        all_metrics = other_metrics + max_metrics
+
+        for metric_name in all_metrics:
             values = [version_metrics[v].get(metric_name, 0) for v in versions]
-            
+            # Skip non-numeric metrics (list[str])
+            if not all(isinstance(v, (int, float)) for v in values):
+                continue
+
             plt.figure(figsize=(10, 6))
             plt.plot(
                 range(len(versions)), 

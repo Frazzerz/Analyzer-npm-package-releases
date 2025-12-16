@@ -2,13 +2,13 @@ from pathlib import Path
 from typing import List
 from dataclasses import asdict, fields
 from collections import defaultdict
-from models import RedFlagChanges
+from models import RedFlag
 
 class TextReporter:
     """Generate red flag text report considering all red flag fields"""
 
     @staticmethod
-    def _get_active_flags(change: RedFlagChanges) -> List[str]:
+    def _get_active_flags(change: RedFlag) -> List[str]:
         """Return the list of active flags for a change object"""
         data = asdict(change)
         # Get all fields from the dataclass
@@ -19,7 +19,7 @@ class TextReporter:
                 and data.get(field, False)]
 
     @staticmethod
-    def generate_compact_report(output_path: Path, changes: List[RedFlagChanges], package: str) -> None:
+    def generate_compact_report(output_path: Path, changes: List[RedFlag], package: str) -> None:
         """Alternative compact format showing flags per version without file details"""
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(f"RED FLAGS REPORT - Package: {package}\n")
@@ -36,8 +36,8 @@ class TextReporter:
             if version_groups:
                 for version_key in sorted(version_groups.keys()):
                     f.write(f"{version_key}:\n")
-                    flags = sorted(set(version_groups[version_key]))
-                    for flag in flags:
+                    seen = dict.fromkeys(version_groups[version_key])
+                    for flag in seen:
                         f.write(f"  • {flag}\n")
                     f.write("\n")
             else:

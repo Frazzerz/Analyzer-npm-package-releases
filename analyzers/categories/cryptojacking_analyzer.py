@@ -88,6 +88,9 @@ class CryptojackingAnalyzer:
             'hook_provider': 0
         }
 
+        if not content:
+            return metrics
+
         metrics['crypto_addresses'], metrics['list_crypto_addresses'] = UtilsForAnalyzer.detect_patterns(content, self.CRYPTO_PATTERNS)
         metrics['cryptocurrency_name'] = UtilsForAnalyzer.detect_count_patterns(content, self.CRYPTOCURRENCY_NAMES)
         metrics['wallet_detection'], metrics['wallet_detection_list'] = UtilsForAnalyzer.detect_patterns(content, self.WALLET_DETECTION_PATTERNS)

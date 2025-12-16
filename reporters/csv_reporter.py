@@ -36,7 +36,7 @@ class CSVReporter:
         )
     
     @staticmethod
-    def save_aggregate_metrics(output_path: Path, aggregate_metrics: Dict[str, Dict[str, int]]) -> None:
+    def save_aggregate_metrics(output_path: Path, aggregate_metrics: Dict[str, Dict[str, int]], package: str) -> None:
         """Save aggregate metrics dictionary to CSV"""
         if not aggregate_metrics:
             print(f"No aggregate metrics to save in {output_path}")
@@ -45,7 +45,10 @@ class CSVReporter:
         # Convert the nested dictionary to a list of flat dictionaries
         rows = []
         for version, metrics in aggregate_metrics.items():
-            row = {'version': version}
+            row = {
+                'package': package,
+                'version': version
+            }
             row.update(metrics)
             rows.append(row)
         

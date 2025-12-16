@@ -9,16 +9,13 @@ class FileMetrics:
     file_path: str
     
     # EVASION TECHNIQUES
-    is_transformed: bool
-    transformed_type: str
+    code_type: str
     suspicious_patterns_count: int
     list_suspicious_patterns: List[str]
     longest_line_length: int
-    new_code_transformed_type: str
+    blank_space_and_character_ratio: float
     platform_detections_count: int
     list_platform_detections: List[str]
-    #concatenated_elements_count: int
-    #list_concatenated_elements: List[str]
     
     # PAYLOAD DELIVERY & EXECUTION
     timing_delays_count: int
@@ -30,7 +27,6 @@ class FileMetrics:
     file_size_bytes: int
     preinstall_scripts: bool
     list_preinstall_scripts: List[str]
-    #presence_of_suspicious_dependency: int
 
     # DATA EXFILTRATION & C2
     scan_functions_count: int
@@ -67,6 +63,3 @@ class FileMetrics:
     npm_release_date: str
     #'github_release_date': str
     #malicious_issues: int
-
-    #changes_additions: List[str]
-    #changes_deletions: List[str]

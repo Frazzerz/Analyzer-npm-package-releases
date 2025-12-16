@@ -47,7 +47,7 @@ class PackageAnalyzer:
         
         return all_metrics
     
-    def analyze_package_red_flags(self, package_name: str, aggregate_metrics_by_tag: Dict[str, Dict[str, int]]) -> List[RedFlagChanges]:
+    def analyze_package_red_flags(self, package_name: str, aggregate_metrics_by_tag: Dict[str, Dict[str, int]]) -> List[RedFlag]:
         """Analyze red flags across versions of a package using tag-level comparison"""
         comparator = VersionComparator()
         all_red_flags = []

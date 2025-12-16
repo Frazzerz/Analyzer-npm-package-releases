@@ -47,7 +47,7 @@ def analyze_single_package(item):
     aggregate_metrics_by_tag_file = pkg_dir / "aggregate_metrics_by_tag.csv"
 
     CSVReporter().save_metrics(metrics_file, metrics)
-    CSVReporter().save_aggregate_metrics(aggregate_metrics_by_tag_file, aggregate_metrics_by_tag)
+    CSVReporter().save_aggregate_metrics(aggregate_metrics_by_tag_file, aggregate_metrics_by_tag, package)
     CSVReporter().save_red_flags(flags_file, flags)
 
     TextReporter().generate_compact_report(summary_file, flags, package)

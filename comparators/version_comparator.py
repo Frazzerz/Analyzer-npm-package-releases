@@ -12,8 +12,29 @@ class VersionComparator:
         self.data_exfiltration_comparator = DataExfiltrationComparator()
         self.cryptojacking_comparator = CryptojackingComparator()
         self.account_comparator = AccountComparator()
+
+    def compare_tags(self, prev_tag_metrics: Dict, curr_tag_metrics: Dict, package: str, version_from: str, version_to: str) -> RedFlag:
+        """Compare two tags (versions) and return red flags"""
+
+        red_flags = {}
+        
+        red_flags.update(self.evasion_comparator.compare(prev_tag_metrics, curr_tag_metrics))
+        red_flags.update(self.payload_comparator.compare(prev_tag_metrics, curr_tag_metrics))
+        red_flags.update(self.data_exfiltration_comparator.compare(prev_tag_metrics, curr_tag_metrics))
+        red_flags.update(self.cryptojacking_comparator.compare(prev_tag_metrics, curr_tag_metrics))
+        red_flags.update(self.account_comparator.compare(prev_tag_metrics, curr_tag_metrics))
+        
+        change = RedFlag(
+            package=package,
+            version_from=version_from,
+            version_to=version_to,
+            **red_flags
+        )
+        
+        return change
+    
     '''
-    def compare_versions(self, prev_metrics: List[FileMetrics], curr_metrics: List[FileMetrics]) -> List[RedFlagChanges]:
+    def compare_versions(self, prev_metrics: List[FileMetrics], curr_metrics: List[FileMetrics]) -> List[RedFlag]:
         """Compare two versions and return red flags"""
         changes = []
         
@@ -32,7 +53,7 @@ class VersionComparator:
             red_flags.update(self.cryptojacking_comparator.compare(prev, curr))
             red_flags.update(self.account_comparator.compare(prev, curr))
             
-            change = RedFlagChanges(
+            change = RedFlag(
                 package=curr.package,
                 file_path=curr.file_path,
                 version_from=prev.version if prev else "new_file",
@@ -43,22 +64,3 @@ class VersionComparator:
         
         return changes
     '''
-    def compare_tags(self, prev_tag_metrics: Dict, curr_tag_metrics: Dict, package: str, version_from: str, version_to: str) -> RedFlagChanges:
-        """Compare two tags (versions) and return red flags"""
-
-        red_flags = {}
-        
-        red_flags.update(self.evasion_comparator.compare(prev_tag_metrics, curr_tag_metrics))
-        red_flags.update(self.payload_comparator.compare(prev_tag_metrics, curr_tag_metrics))
-        red_flags.update(self.data_exfiltration_comparator.compare(prev_tag_metrics, curr_tag_metrics))
-        red_flags.update(self.cryptojacking_comparator.compare(prev_tag_metrics, curr_tag_metrics))
-        red_flags.update(self.account_comparator.compare(prev_tag_metrics, curr_tag_metrics))
-        
-        change = RedFlagChanges(
-            package=package,
-            version_from=version_from,
-            version_to=version_to,
-            **red_flags
-        )
-        
-        return change

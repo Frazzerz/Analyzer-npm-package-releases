@@ -8,14 +8,11 @@ class CryptojackingComparator:
         if prev_tag_metrics is None:
             # No comparison for first version - return no flags
             return {
-                'initial_presence_of_crypto_addresses': False,
                 'crypto_addresses_introduced': False,
                 'crypto_addresses_increase': False,
                 'change_crypto_addresses': False,
-                'initial_presence_of_cryptocurrency_name': False,
                 'cryptocurrency_name_introduced': False,
                 'cryptocurrency_name_increase': False,
-                'initial_presence_of_wallet_checks': False,
                 'wallet_checks_introduced': False,
                 'wallet_checks_increase': False,
                 'replaced_crypto_addresses_introduced': False,
@@ -24,6 +21,9 @@ class CryptojackingComparator:
         else:
             prev_crypto = prev_tag_metrics.get('crypto_addresses')
             curr_crypto = curr_tag_metrics.get('crypto_addresses')
+
+            prev_list_crypto = prev_tag_metrics.get('list_crypto_addresses')
+            curr_list_crypto = curr_tag_metrics.get('list_crypto_addresses')
 
             prev_cryptocurrency = prev_tag_metrics.get('cryptocurrency_name')
             curr_cryptocurrency = curr_tag_metrics.get('cryptocurrency_name')
@@ -38,54 +38,13 @@ class CryptojackingComparator:
             curr_hook = curr_tag_metrics.get('hook_provider')
 
             return {
-                'initial_presence_of_crypto_addresses': False,
                 'crypto_addresses_introduced': prev_crypto == 0 and curr_crypto > 0,
-                'crypto_addresses_increase': prev_crypto != 0 and curr_crypto > prev_crypto,
-                'change_crypto_addresses': False,
-                'initial_presence_of_cryptocurrency_name': False,
+                'crypto_addresses_increase': prev_crypto < curr_crypto,
+                'change_crypto_addresses': prev_crypto == curr_crypto and prev_list_crypto != curr_list_crypto and prev_crypto > 0,
                 'cryptocurrency_name_introduced': prev_cryptocurrency == 0 and curr_cryptocurrency > 0,
-                'cryptocurrency_name_increase': prev_cryptocurrency != 0 and curr_cryptocurrency > prev_cryptocurrency,
-                'initial_presence_of_wallet_checks': False,
+                'cryptocurrency_name_increase': prev_cryptocurrency < curr_cryptocurrency,
                 'wallet_checks_introduced': prev_wallet == 0 and curr_wallet > 0,
-                'wallet_checks_increase': curr_wallet > prev_wallet,
+                'wallet_checks_increase': prev_wallet < curr_wallet,
                 'replaced_crypto_addresses_introduced': prev_replaced == 0 and curr_replaced > 0,
                 'hook_provider_introduced': prev_hook == 0 and curr_hook > 0
             }
-
-'''
-    def compare(self, prev: FileMetrics, curr: FileMetrics) -> Dict:
-        
-        # New file
-        if prev is None:
-            return {
-                'initial_presence_of_crypto_addresses': curr.crypto_addresses > 0,
-                'crypto_addresses_introduced': False,
-                'crypto_addresses_increase': False,
-                'change_crypto_addresses': False,
-                'initial_presence_of_cryptocurrency_name': curr.cryptocurrency_name > 0,
-                'cryptocurrency_name_introduced': False,
-                'cryptocurrency_name_increase': False,
-                'initial_presence_of_wallet_checks': curr.wallet_detection > 0,
-                'wallet_checks_introduced': False,
-                'wallet_checks_increase': False,
-                'replaced_crypto_addresses_introduced': curr.replaced_crypto_addresses > 0,
-                'hook_provider_introduced': curr.hook_provider > 0
-            }
-        else:
-            # Existing file
-            return {
-                'initial_presence_of_crypto_addresses': False,
-                'crypto_addresses_introduced': prev.crypto_addresses == 0 and curr.crypto_addresses > 0,
-                'crypto_addresses_increase': prev.crypto_addresses != 0 and prev.crypto_addresses < curr.crypto_addresses,    # increase only if previously is non-zero
-                'change_crypto_addresses': (prev.crypto_addresses == curr.crypto_addresses and 
-                    set(prev.list_crypto_addresses) != set(curr.list_crypto_addresses)),
-                'initial_presence_of_cryptocurrency_name': False,
-                'cryptocurrency_name_introduced': prev.cryptocurrency_name == 0 and curr.cryptocurrency_name > 0,
-                'cryptocurrency_name_increase': prev.cryptocurrency_name != 0 and prev.cryptocurrency_name < curr.cryptocurrency_name,
-                'initial_presence_of_wallet_checks': False,
-                'wallet_checks_introduced': prev.wallet_detection == 0 and curr.wallet_detection > 0,
-                'wallet_checks_increase': prev.wallet_detection < curr.wallet_detection,
-                'replaced_crypto_addresses_introduced': prev.replaced_crypto_addresses == 0 and curr.replaced_crypto_addresses > 0,
-                'hook_provider_introduced': prev.hook_provider == 0 and curr.hook_provider > 0
-            }
-'''

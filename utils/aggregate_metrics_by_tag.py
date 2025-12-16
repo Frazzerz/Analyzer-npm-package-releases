@@ -1,18 +1,20 @@
 from collections import defaultdict
 from models.metrics import FileMetrics
-from typing import List, Dict
+from typing import Any, List, Dict
 
 class AggregateMetricsByTag:
     
     METRIC_CLASSES = {
         'EVASION_TECHNIQUES': [
+            'code_type',
             'suspicious_patterns_count',
             'platform_detections_count'
         ],
         'PAYLOAD_DELIVERY_EXECUTION': [
             'timing_delays_count',
             'eval_count',
-            'shell_commands_count'
+            'shell_commands_count',
+            'list_preinstall_scripts'
         ],
         'DATA_EXFILTRATION_C2': [
             'scan_functions_count',
@@ -20,6 +22,7 @@ class AggregateMetricsByTag:
         ],
         'CRYPTOJACKING_WALLET_THEFT': [
             'crypto_addresses',
+            'list_crypto_addresses',
             'cryptocurrency_name',
             'wallet_detection',
             'replaced_crypto_addresses',
@@ -29,8 +32,11 @@ class AggregateMetricsByTag:
             'npm_maintainers'
         ],
         'OTHER_METRICS': [
-            'longest_line_length',
-            'file_size_bytes'
+            'file_size_bytes',
+            #'blank_space_and_character_ratio'  # TODO per plottarlo, ratio_versione = ( somma di tutti spazi di tutti i file) / (somma di tutti caratteri di tutti i file)
+        ],
+        'MAX_METRICS': [
+            'longest_line_length'
         ]
     }
 
@@ -58,26 +64,47 @@ class AggregateMetricsByTag:
         return parts
 
     @staticmethod
-    def aggregate_metrics_by_version(metrics_list: List[FileMetrics]) -> Dict[str, Dict[str, int]]:
-        """Aggregate metrics by version, summing values from all files"""
-        aggregated = defaultdict(lambda: defaultdict(int))
-        
+    def aggregate_metrics_by_version(metrics_list: List[FileMetrics]) -> Dict[str, Dict[str, Any]]:
+        """Aggregate metrics by version:
+        - int are summed
+        - list[str] are concatenated (duplicates allowed, order irrelevant)
+        """
+        aggregated: Dict[str, Dict[str, Any]] = defaultdict(dict)
+
+        # Collect metric names once
+        metric_names = []
+        for class_metrics in AggregateMetricsByTag.METRIC_CLASSES.values():
+            metric_names.extend(class_metrics)
+
         for metric in metrics_list:
             version = metric.version
-            
-            # Collect all metrics from all classes
-            all_metrics = []
-            for class_metrics in AggregateMetricsByTag.METRIC_CLASSES.values():
-                all_metrics.extend(class_metrics)
-            
-            for metric_name in all_metrics:
-                value = getattr(metric, metric_name, 0)
+
+            for metric_name in metric_names:
+                value = getattr(metric, metric_name, None)
+                if value is None:
+                    continue
+
+                # numeric aggregation
                 if isinstance(value, (int, float)):
-                    aggregated[version][metric_name] += value
-        
-        # Sort the aggregated dictionary by version
+                    if metric_name in AggregateMetricsByTag.METRIC_CLASSES['MAX_METRICS']:
+                        aggregated[version][metric_name] = max(aggregated[version].get(metric_name, value), value)
+                    else:
+                        aggregated[version].setdefault(metric_name, 0)
+                        aggregated[version][metric_name] += value
+
+                # list[str] aggregation (simple concatenation)
+                elif isinstance(value, list):
+                    aggregated[version].setdefault(metric_name, [])
+                    aggregated[version][metric_name].extend(value)
+
+                elif isinstance(value, str):
+                    aggregated[version].setdefault(metric_name, [])
+                    if value not in aggregated[version][metric_name]:
+                        aggregated[version][metric_name].append(value)
+
+        # Sort by version
         sorted_aggregated = {}
         for version in sorted(aggregated.keys(), key=AggregateMetricsByTag._version_sort_key):
-            sorted_aggregated[version] = dict(aggregated[version])
-        
+            sorted_aggregated[version] = aggregated[version]
+
         return sorted_aggregated

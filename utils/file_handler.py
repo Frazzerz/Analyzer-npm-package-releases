@@ -3,6 +3,7 @@ from typing import List
 import json
 import shutil
 import os
+import re
 class FileHandler:
     """Handles file and directory operations"""
     
@@ -33,7 +34,6 @@ class FileHandler:
         }
         exclude_suffixes = ('.d.ts', '.d.ts.map', '.png', '.jpg', '.jpeg', '.ai', '.svg', '.gif', 'ico', '.eot', '.ttf',
                              '.woff', '.woff2', '.mp4', '.mp3', '.mov',)
-
         files: List[Path] = []
         directory_str = str(directory)
         for root, dirs, filenames in os.walk(directory_str):
@@ -51,10 +51,16 @@ class FileHandler:
     
     @staticmethod
     def read_file(file_path: Path) -> str:
-        """Read file content"""
+        """Read file content and remove comments"""
         try:
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                return f.read()
+                content = f.read()
+                # Removes single-line comments (//)
+                content = re.sub(r'//.*$', '', content, flags=re.MULTILINE)
+                # Removes multi-line comments (/* ... */)
+                content = re.sub(r'/\*[\s\S]*?\*/', '', content)
+                return content
+            
         except Exception as e:
             print(f"Error reading {file_path}: {e}")
             return ""
@@ -67,7 +73,6 @@ class FileHandler:
     @staticmethod
     def delete_previous_analysis() -> None:
         """Delete all results from previous analysis (deobfuscated_files, repos, other_versions/extracted, log file, output directory"""
-
         dirs_to_delete = ['deobfuscated_files', 'repos', 'other_versions/extracted', 'analysis_results']
         for dir_name in dirs_to_delete:
             dir_path = Path(dir_name)

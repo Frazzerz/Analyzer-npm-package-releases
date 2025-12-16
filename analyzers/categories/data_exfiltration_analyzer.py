@@ -58,6 +58,9 @@ class DataExfiltrationAnalyzer:
             #'list_data_transmission': [],      # Placeholder
         }
 
+        if not content:
+            return metrics
+
         metrics['scan_functions_count'],  metrics['list_scan_functions'] = UtilsForAnalyzer.detect_patterns(content, self.SCAN_FUNCTIONS_PATTERNS)
         metrics['sensitive_elements_count'], metrics['list_sensitive_elements'] = UtilsForAnalyzer.detect_patterns(content, self.SCANNED_ELEMENTS_PATTERNS)
         return metrics
