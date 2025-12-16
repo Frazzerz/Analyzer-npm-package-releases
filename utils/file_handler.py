@@ -1,3 +1,4 @@
+from ast import pattern
 from pathlib import Path
 from typing import List
 import json
@@ -55,10 +56,7 @@ class FileHandler:
         try:
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                 content = f.read()
-                # Removes single-line comments (//)
-                content = re.sub(r'//.*$', '', content, flags=re.MULTILINE)
-                # Removes multi-line comments (/* ... */)
-                content = re.sub(r'/\*[\s\S]*?\*/', '', content)
+                content = FileHandler.remove_js_comments_easy(content)
                 return content
             
         except Exception as e:
@@ -84,3 +82,22 @@ class FileHandler:
         if log_file.exists() and log_file.is_file():
             log_file.unlink()
             print(f"Deleted log file: {log_file}")
+
+    @staticmethod
+    def remove_js_comments_easy(content):
+        '''Remove JavaScript comments from content, only if starting at the beginning of the line'''
+        out = []
+        in_block = False
+        for line in content.splitlines():
+            stripped = line.lstrip()
+            if in_block:
+                if stripped.startswith("*/"):
+                    in_block = False
+                continue
+            if stripped.startswith("//"):
+                continue
+            if stripped.startswith("/*"):
+                in_block = True
+                continue
+            out.append(line)
+        return "\n".join(out)

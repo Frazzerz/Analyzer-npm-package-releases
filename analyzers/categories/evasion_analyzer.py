@@ -54,13 +54,13 @@ class EvasionAnalyzer:
         metrics['platform_detections_count'], metrics['list_platform_detections'] = UtilsForAnalyzer.detect_patterns(content, self.PLATFORM_PATTERNS)
         metrics['longest_line_length'] = max(len(r) for r in content.splitlines()) if content.splitlines() else 0
         metrics['blank_space_and_character_ratio'] = content.count(' ') / len(content) if content else 0.0
-        no_non_empty_lines = len([r for r in content.splitlines() if r.strip()])
+        no_empty_lines = len([r for r in content.splitlines() if r.strip()])
 
         if (package_info['info'] == 'deobfuscated'):
             code_type = 'Deobfuscated'
         elif (self._detect_obfuscated_code(metrics['suspicious_patterns_count'], metrics['longest_line_length'])):
             code_type = 'Obfuscated'
-        elif (self._detect_minified_code(no_non_empty_lines, metrics['blank_space_and_character_ratio'], metrics['longest_line_length'])):
+        elif (self._detect_minified_code(no_empty_lines, metrics['blank_space_and_character_ratio'], metrics['longest_line_length'])):
             code_type = 'Minified'
         else:
             code_type = 'Clear'
@@ -77,10 +77,10 @@ class EvasionAnalyzer:
         return suspicious_patterns_count > 15 and longest_line_length > 30000           # Thresholds for obfuscation detection
     
     @staticmethod
-    def _detect_minified_code(no_non_empty_lines: int, blank_space_and_character_ratio: float, longest_line_length: int) -> bool:
+    def _detect_minified_code(no_empty_lines: int, blank_space_and_character_ratio: float, longest_line_length: int) -> bool:
         """Detect if code is minified"""
         # Simple heuristic checks for minification
-        return blank_space_and_character_ratio < 0.03 and no_non_empty_lines < 3 and longest_line_length > 100        # Thresholds for minification detection
+        return blank_space_and_character_ratio < 0.03 and no_empty_lines < 3 and longest_line_length > 100        # Thresholds for minification detection
 
     def deobfuscate_code(self, content: str, package_name: str, version: str, file_name: str):
         """Attempt to deobfuscate code"""

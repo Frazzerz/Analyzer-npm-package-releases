@@ -35,6 +35,8 @@ class PayloadComparator:
 
             prev_preinstall = prev_tag_metrics.get('list_preinstall_scripts')
             curr_preinstall = curr_tag_metrics.get('list_preinstall_scripts')
+            prev_has_preinstall = bool(prev_preinstall)
+            curr_has_preinstall = bool(curr_preinstall)
 
             return {
                 'timing_delays_increase_significant': timing_delays_increase >= 5 and timing_delays_increase > prev_timing * 0.5,
@@ -42,6 +44,6 @@ class PayloadComparator:
                 'eval_function_increase_significant': eval_increase >= 5 and eval_increase > prev_eval * 0.5 and prev_eval != 0,
                 'shell_commands_increase_significant': shell_increase >= 5 and shell_increase > prev_shell * 0.5,
                 'size_bytes_increase_significant': curr_size_bytes > prev_size_bytes * 10,
-                'preinstall_scripts_introduced': not prev_preinstall and curr_preinstall,
-                'preinstall_scripts_change': prev_preinstall != curr_preinstall and prev_preinstall,
+                'preinstall_scripts_introduced': not prev_has_preinstall and curr_has_preinstall,
+                'preinstall_scripts_change': prev_has_preinstall != curr_has_preinstall and prev_has_preinstall,
             }
