@@ -2,6 +2,10 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from git import Repo
 import requests
+import shutil
+import subprocess
+import os
+from .logging_utils import synchronized_print
 
 class NPMClient:
     """Cloning Git repos associated with a pkg and retrieving ordered tags"""
@@ -11,7 +15,7 @@ class NPMClient:
     def get_npm_package_data(self, package_name: str) -> Optional[Dict]:
         """Fetch raw metadata for an NPM package by making an HTTP request to the registry"""
         try:
-            response = requests.get(f'{self.registry_url}/{package_name}', timeout=3)
+            response = requests.get(f'{self.registry_url}/{package_name}', timeout=5)
             response.raise_for_status()
             return response.json()
         
@@ -37,10 +41,30 @@ class NPMClient:
             return None
         
         git_url = data.get('repository', {}).get('url', '')
-        # Normalize the URL: removes git, readme and any final hash
-        git_url = git_url.replace("git+", "").replace("#readme", "")
-        # Remove .git extension if present
-        return git_url.split("#")[0].rstrip("/").rstrip(".git")
+        if not git_url:
+            return None
+
+        # Remove common prefixes
+        prefixes = ["git+https://", "git+ssh://", "git://", "git+","ssh://git@", "http://"]
+
+        for prefix in prefixes:
+            if git_url.startswith(prefix):
+                git_url = git_url[len(prefix):]
+        
+        # Remove any fragment (#readme, #master, etc.)
+        git_url = git_url.split('#')[0]
+        
+        # For GitHub URLs
+        if 'github.com' in git_url:
+            # Ensure it starts with https://
+            if not git_url.startswith('https://'):
+                git_url = f'https://{git_url}'
+            # Ensure it ends with .git
+            if not git_url.endswith('.git'):
+                git_url = f'{git_url}.git'
+        git_url = git_url.rstrip('/')
+        
+        return git_url
 
     def clone_package_repo(self, package_name: str, repos_dir: Path = Path("repos")) -> Optional[Repo]:
         """Clone an NPM package's Git repository in the `repos/` directory. If the repository has already been cloned previously, reuse it"""
@@ -60,17 +84,52 @@ class NPMClient:
             return Repo(repo_path)
 
         try:
-            # Clone the repository
+            
+            # Set environment variables to prevent interactive authentication
+            #env = os.environ.copy()
+            #env['GIT_TERMINAL_PROMPT'] = '0'  # Disable interactive prompt
+            #env['GIT_ASKPASS'] = 'echo'       # Return empty password
+            synchronized_print(f"Cloning repository for {package_name} from {git_url}...")
+            '''
+            # Clone with GitPython, no timeout
             repo = Repo.clone_from(git_url, repo_path)
-            print(f"Repository cloned for {package_name}")
+            synchronized_print(f"Repository cloned for {package_name}")
             return repo
+            '''
+            # Clone with subprocess, with timeout
+            result = subprocess.run(
+                ['git', 'clone', git_url, str(repo_path)],
+                capture_output=True,
+                text=True,
+                timeout=120, # seconds
+                env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'}
+            )
+            if result.returncode == 0:
+                synchronized_print(f"Repository cloned for {package_name}")
+                return Repo(repo_path)
+
         except Exception as e:
-            print(f"Error cloning {package_name}: {e}")
+            
+            error_msg = str(e).lower()
+            if 'authentication' in error_msg or 'credentials' in error_msg:
+                print(f"[SKIP] Repository for {package_name} requires authentication")
+            elif 'timed out' in error_msg:
+                print(f"[TIMEOUT] Cloning repository for {package_name} timed out")
+            else:
+                print(f"Error cloning {package_name}: {e}")
+            # Alternative tests could be done to try to download it via other means
+
+            # Clean up partial clone if it exists
+            if repo_path.exists():
+                import shutil
+                try:
+                    shutil.rmtree(repo_path)
+                except:
+                    pass    
             return None
 
     def get_package_tags(self, repo: Repo) -> List[str]:
         """Return tags sorted chronologically"""
-        
         try:
             tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
             return [t.name for t in tags]

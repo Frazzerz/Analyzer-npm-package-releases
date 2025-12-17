@@ -57,8 +57,6 @@ def analyze_single_package(item):
     with open(pkg_output_file, 'a', encoding='utf-8') as f:
         f.write(f"Saved {len(metrics)} metrics in {metrics_file}\n")
         f.write(f"Saved {len(flags)} red flags in {flags_file}\n")
-        f.write(f"Saved summary in {summary_file}\n")
-        f.write(f"Saved graphs in {pkg_dir / 'graphs'}\n")
 
     elapsed_time = time.time() - start_time
     print(f"[{package_index}/{total_packages}] Completed: {package} -> {pkg_dir} ({elapsed_time:.1f}s)")
