@@ -1,7 +1,7 @@
 import re
 from typing import Dict, List, Pattern
-from utils import Deobfuscator
-from utils import UtilsForAnalyzer
+from utils import Deobfuscator, UtilsForAnalyzer
+import jsbeautifier
 class EvasionAnalyzer:
     """Analyze evasion techniques"""
 
@@ -39,8 +39,8 @@ class EvasionAnalyzer:
     def analyze(self, content: str, package_info: Dict) -> Dict:
         metrics = {
             'code_type': 'None',
-            'suspicious_patterns_count': 0,
-            'list_suspicious_patterns': [],
+            'obfuscation_patterns_count': 0,
+            'list_obfuscation_patterns': [],
             'longest_line_length': 0,
             'blank_space_and_character_ratio': 0.0,
             'platform_detections_count': 0,
@@ -50,18 +50,23 @@ class EvasionAnalyzer:
         if not content:
             return metrics
         
-        metrics['suspicious_patterns_count'], metrics['list_suspicious_patterns'] = UtilsForAnalyzer.detect_patterns(content, self.OBFUSCATION_PATTERNS)
+        if self._detect_minified_code(package_info['file_name']):
+            print(f"Minified code detected: {package_info['file_name']}")
+            code_type = 'Minified'
+            content = self.unminify_code(content)
+            print("Code unminified.")
+
+        metrics['obfuscation_patterns_count'], metrics['list_obfuscation_patterns'] = UtilsForAnalyzer.detect_patterns(content, self.OBFUSCATION_PATTERNS)
         metrics['platform_detections_count'], metrics['list_platform_detections'] = UtilsForAnalyzer.detect_patterns(content, self.PLATFORM_PATTERNS)
         metrics['longest_line_length'] = max(len(r) for r in content.splitlines()) if content.splitlines() else 0
         metrics['blank_space_and_character_ratio'] = content.count(' ') / len(content) if content else 0.0
         no_empty_lines = len([r for r in content.splitlines() if r.strip()])
 
+        print(f"Analyzed {package_info['file_name']}")
         if (package_info['info'] == 'deobfuscated'):
             code_type = 'Deobfuscated'
-        elif (self._detect_obfuscated_code(metrics['suspicious_patterns_count'], metrics['longest_line_length'])):
+        elif (self._detect_obfuscated_code(metrics['obfuscation_patterns_count'], metrics['longest_line_length'])):
             code_type = 'Obfuscated'
-        elif (self._detect_minified_code(no_empty_lines, metrics['blank_space_and_character_ratio'], metrics['longest_line_length'])):
-            code_type = 'Minified'
         else:
             code_type = 'Clear'
         metrics['code_type'] = code_type        
@@ -71,21 +76,23 @@ class EvasionAnalyzer:
         return metrics
     
     @staticmethod
-    def _detect_obfuscated_code(suspicious_patterns_count: int, longest_line_length: int) -> bool:
+    def _detect_obfuscated_code(obfuscation_patterns_count: int, longest_line_length: int) -> bool:
         """Detect if code is obfuscated"""
         #Simple heuristic checks for obfuscation
-        return suspicious_patterns_count > 15 and longest_line_length > 30000           # Thresholds for obfuscation detection
+        return obfuscation_patterns_count > 15 and longest_line_length > 30000           # Thresholds for obfuscation detection
     
     @staticmethod
-    def _detect_minified_code(no_empty_lines: int, blank_space_and_character_ratio: float, longest_line_length: int) -> bool:
+    def _detect_minified_code(file_name: str) -> bool:
         """Detect if code is minified"""
         # Simple heuristic checks for minification
-        return blank_space_and_character_ratio < 0.03 and no_empty_lines < 3 and longest_line_length > 100        # Thresholds for minification detection
+        #return blank_space_and_character_ratio < 0.03 and no_empty_lines < 3 and longest_line_length > 100        # Thresholds for minification detection
+        return file_name.endswith('.min.js')
 
     def deobfuscate_code(self, content: str, package_name: str, version: str, file_name: str):
         """Attempt to deobfuscate code"""
         Deobfuscator.deobfuscate(content, package_name, version, file_name)
 
-    def deminify_code(self, content: str, package_name: str, version: str, file_name: str):
-        """Attempt to deminify code"""
-        # TODO ?
+    def unminify_code(self, content: str) -> str:
+        """Attempt to unminify code"""
+        print("Unminifying code...")
+        return jsbeautifier.beautify(content)

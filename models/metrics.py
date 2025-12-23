@@ -10,8 +10,8 @@ class FileMetrics:
     
     # EVASION TECHNIQUES
     code_type: str
-    suspicious_patterns_count: int
-    list_suspicious_patterns: List[str]
+    obfuscation_patterns_count: int
+    list_obfuscation_patterns: List[str]
     longest_line_length: int
     blank_space_and_character_ratio: float
     platform_detections_count: int

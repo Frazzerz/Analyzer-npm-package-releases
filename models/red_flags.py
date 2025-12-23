@@ -10,7 +10,7 @@ class RedFlag:
     # EVASION TECHNIQUES
     obfuscated_code_introduced: bool
     minified_code_introduced: bool
-    hex_suspicious_patterns_increase_significant: bool
+    hex_obfuscation_patterns_increase_significant: bool
     platform_detections_increase_significant: bool
 
     # PAYLOAD DELIVERY & EXECUTION

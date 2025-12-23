@@ -7,7 +7,7 @@ class GraphReporter:
     """Generate evolution graphs for metrics across versions"""
     
     METRIC_LABELS = {
-        'suspicious_patterns_count': 'Suspicious Patterns',
+        'obfuscation_patterns_count': 'Obfuscation Patterns',
         'longest_line_length': 'Longest Line Length',
         'platform_detections_count': 'Platform Detections',
         'timing_delays_count': 'Timing Delays',

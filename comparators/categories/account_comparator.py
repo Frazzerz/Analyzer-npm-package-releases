@@ -36,7 +36,14 @@ class AccountComparator:
                 curr_npm_date = UTC_MIN_DATETIME
             elif isinstance(curr_npm_date, str):
                 curr_npm_date = datetime.fromisoformat(curr_npm_date)
-
+            
+            curr_npm_hash_commit = curr_tag_metrics.get('npm_hash_commit')
+            if curr_npm_hash_commit is None:
+                curr_npm_hash_commit = ""
+            curr_github_hash_commit = curr_tag_metrics.get('github_hash_commit')
+            if curr_github_hash_commit is None:
+                curr_github_hash_commit = ""
+            
             return {
                 #'npm_new_maintainer': curr.npm_maintainers - prev.npm_maintainers > 0,   #It makes too much noise  
                 #'npm_awakening_inactive_maintainer': False,
@@ -45,9 +52,7 @@ class AccountComparator:
                 #'github_publisher_release': False,
                 #'github_repository_owner': False,
                 'hash_mismatch_commit_between_npm_and_github': (
-                    curr_tag_metrics.get('npm_hash_commit') != curr_tag_metrics.get('github_hash_commit') and 
-                    curr_tag_metrics.get('github_hash_commit') != "" and 
-                    curr_tag_metrics.get('npm_hash_commit') != ""
+                    curr_npm_hash_commit != curr_github_hash_commit and curr_npm_hash_commit != "" and curr_github_hash_commit != ""
                 ),
                 #'npm_before_github': curr.npm_release_date < curr.github_release_date,      # test
                 #'hash_mismatch_file_between_npm_and_github': False,

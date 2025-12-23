@@ -34,7 +34,7 @@ class FileHandler:
             '.eslintrc', '.prettierrc', 'CHANGELOG.md', '.eslintignore', 'yarn.lock', '.gitignore'
         }
         exclude_suffixes = ('.d.ts', '.d.ts.map', '.png', '.jpg', '.jpeg', '.ai', '.svg', '.gif', 'ico', '.eot', '.ttf',
-                             '.woff', '.woff2', '.mp4', '.mp3', '.mov',)
+                             '.woff', '.woff2', '.mp4', '.mp3', '.mov', '.map')
         files: List[Path] = []
         directory_str = str(directory)
         for root, dirs, filenames in os.walk(directory_str):
@@ -70,8 +70,8 @@ class FileHandler:
 
     @staticmethod
     def delete_previous_analysis() -> None:
-        """Delete all results from previous analysis (deobfuscated_files, repos, other_versions/extracted, log file, output directory"""
-        dirs_to_delete = ['deobfuscated_files', 'repos', 'other_versions/extracted', 'analysis_results']
+        """Delete all results from previous analysis (repos, other_versions/extracted, log file, output directory) #deobfuscated_files"""
+        dirs_to_delete = ['repos', 'other_versions/extracted', 'analysis_results']    # deobfuscated_files
         for dir_name in dirs_to_delete:
             dir_path = Path(dir_name)
             if dir_path.exists() and dir_path.is_dir():

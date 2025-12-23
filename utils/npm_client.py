@@ -20,7 +20,7 @@ class NPMClient:
             return response.json()
         
         except requests.exceptions.RequestException as e:
-            print(f"[NPM ERROR] Failed to fetch '{package_name}': {e}")
+            print(f"Failed to fetch '{package_name}': {e}")
             return None
     
     def get_package_git_url(self, package_name: str) -> Optional[str]:
@@ -112,9 +112,9 @@ class NPMClient:
             
             error_msg = str(e).lower()
             if 'authentication' in error_msg or 'credentials' in error_msg:
-                print(f"[SKIP] Repository for {package_name} requires authentication")
+                print(f"Repository for {package_name} requires authentication")
             elif 'timed out' in error_msg:
-                print(f"[TIMEOUT] Cloning repository for {package_name} timed out")
+                print(f"Cloning repository for {package_name} timed out")
             else:
                 print(f"Error cloning {package_name}: {e}")
             # Alternative tests could be done to try to download it via other means

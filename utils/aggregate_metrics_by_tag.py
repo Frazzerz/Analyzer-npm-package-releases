@@ -7,7 +7,7 @@ class AggregateMetricsByTag:
     METRIC_CLASSES = {
         'EVASION_TECHNIQUES': [
             'code_type',
-            'suspicious_patterns_count',
+            'obfuscation_patterns_count',
             'platform_detections_count'
         ],
         'PAYLOAD_DELIVERY_EXECUTION': [
