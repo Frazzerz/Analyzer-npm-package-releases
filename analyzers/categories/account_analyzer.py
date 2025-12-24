@@ -33,7 +33,7 @@ class AccountAnalyzer:
         self._npm_cache[package_name] = npm_data
         return npm_data
     
-    def analyze(self, package_name: str, version: str, git_repo_path: Path) -> Dict:
+    def analyze(self, package_name: str, version: str, git_repo_path: Path, source: str) -> Dict:
         metrics = {
             'npm_maintainers': 0,
             'npm_maintainers_nicks': [],
@@ -52,7 +52,8 @@ class AccountAnalyzer:
             #'github_release_date': self.UTC_MIN_DATETIME,    # missing date
             #'malicious_issues': 0              # Placeholder
         }
-        
+        if source in ("local", "deobfuscated"):
+            return metrics
         '''
         # For local versions or deobfuscated versions
         if not package_info or package_info.get('info') in ("local", "deobfuscated"):

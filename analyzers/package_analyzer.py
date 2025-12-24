@@ -1,13 +1,7 @@
 from pathlib import Path
-from typing import Dict, List
-from analyzers.aggregate_metrics_by_tag import AggregateMetricsByTag
-from comparators.version_comparator import VersionComparator
 from models import *
 from utils import NPMClient, FileHandler
-from utils.logging_utils import synchronized_print
 from .git_version_analyzer import GitVersionAnalyzer
-from .local_version_analyzer import LocalVersionAnalyzer  
-from .deobfuscated_version_analyzer import DeobfuscatedAnalyzer
 from .code_analyzer import CodeAnalyzer
 
 class PackageAnalyzer:
@@ -18,31 +12,16 @@ class PackageAnalyzer:
         self.file_handler = FileHandler()
         self.code_analyzer = CodeAnalyzer()
         self.include_local = include_local
-        self.git_analyzer = GitVersionAnalyzer(self.code_analyzer, self.file_handler, workers)
-        self.local_analyzer = LocalVersionAnalyzer(self.code_analyzer, self.file_handler, local_versions_dir)
-        self.deobfuscated_analyzer = DeobfuscatedAnalyzer(self.code_analyzer, self.file_handler)
+        self.git_analyzer = GitVersionAnalyzer(self.code_analyzer, self.file_handler, workers, include_local=include_local, local_versions_dir=local_versions_dir)
         self.workers = workers
     
     def analyze_package(self, package_name: str, output_dir: Path) -> None:
         """Analyze all releases of a package"""
 
-        # Analyze Git versions
         repo = self.npm_client.clone_package_repo(package_name)
         if repo:
             self.git_analyzer.analyze_git_versions(package_name, repo, output_dir)
         else:
             print(f"Unable to analyze {package_name} - Git repository not available")
-        
-        # If requested, analyze local versions
-        if self.include_local:
-            self.local_analyzer.setup_local_versions(package_name)
-            local_metrics = self.local_analyzer.analyze_local_versions(package_name)
-            #all_metrics.extend(local_metrics)
-        
-        # If deobfuscated files were created during analysis, analyze them as well
-        deobf_dir = Path('deobfuscated_files') / package_name
-        if deobf_dir.exists() and deobf_dir.is_dir():
-            deobf_metrics = self.deobfuscated_analyzer.analyze_deobfuscated_versions(package_name, deobf_dir)
-            #all_metrics.extend(deobf_metrics)
         
         return None

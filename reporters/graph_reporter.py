@@ -4,9 +4,13 @@ from typing import List, Dict
 from utils.logging_utils import synchronized_print
 from models.graph_label import GraphLabel
 import pandas as pd
+from packaging.version import Version
 
 class GraphReporter:
     """Generate evolution graphs for metrics across versions"""
+
+    def normalize_version(v: str) -> Version:
+        return Version(v.lstrip("v").replace("-local", ""))
 
     @staticmethod
     def generate_evolution_graphs(output_dir: Path, package_name: str) -> None:
@@ -20,7 +24,9 @@ class GraphReporter:
             return
         
         # Prepare data: versions and metrics
-        sorted_versions = sorted(df['version'].unique(), key=lambda v: list(map(int, v.split('.'))))
+        #sorted_versions = sorted(df['version'].unique(), key=lambda v: list(map(int, v.split('.'))))
+        sorted_versions = sorted(df['version'].unique(), key=GraphReporter.normalize_version)
+        
         version_metrics = {}
 
         for _, row in df.iterrows():

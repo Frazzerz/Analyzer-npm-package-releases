@@ -116,7 +116,7 @@ class AggregateMetricsByTag:
         return sorted_aggregated
     
     @staticmethod
-    def aggregate_metrics_by_tag(metrics_list: List[FileMetrics], repo_path: Path) -> List[VersionMetrics]:
+    def aggregate_metrics_by_tag(metrics_list: List[FileMetrics], repo_path: Path, source: str) -> List[VersionMetrics]:
         """Aggregate metrics by tag (metric classes)"""
 
         grouped = defaultdict(list)
@@ -130,7 +130,7 @@ class AggregateMetricsByTag:
         # 2. aggrego
         for (package, version), metrics in grouped.items():
             # Calculate also metrics for account categories
-            account_metrics = AccountAnalyzer().analyze(package, version, repo_path)
+            account_metrics = AccountAnalyzer().analyze(package, version, repo_path, source)
 
             vm = VersionMetrics(
                 package=package,

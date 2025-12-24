@@ -1,10 +1,7 @@
-from pathlib import Path
-from typing import List
-from models import *
-from comparators import VersionComparator
 from utils import FileHandler, LocalVersionManager, synchronized_print
 from .code_analyzer import CodeAnalyzer
 
+'''
 def version_key(tag: str):
     """Sort key for versions that handles numeric parts and local suffixes."""
     is_local = "-local" in tag
@@ -25,7 +22,7 @@ def version_key(tag: str):
             parts.append(9999)      # non-numeric values ​​sent to the end
 
     return (parts, 0 if is_local else 1, tag)  # local before others
-
+'''
 class LocalVersionAnalyzer:
     """Manages the analysis of local versions."""
     def __init__(self, code_analyzer: CodeAnalyzer, file_handler: FileHandler, local_versions_dir: str):
@@ -38,10 +35,10 @@ class LocalVersionAnalyzer:
         """Sets up local versions for analysis."""
         local_versions = self.local_version_manager.get_local_versions_for_package(package_name)
         if not local_versions:
-            print(f"No local versions found for {package_name}")
+            synchronized_print(f"No local versions found for {package_name}")
             return
 
-        print(f"Found {len(local_versions)} local versions for {package_name}")
+        synchronized_print(f"Found {len(local_versions)} local versions for {package_name}")
         self.local_version_manager.local_extract_dir.mkdir(parents=True, exist_ok=True)
 
         for local_version in local_versions:
@@ -52,10 +49,10 @@ class LocalVersionAnalyzer:
                 )
                 version_with_suffix = f"{local_version['version']}-local"
                 self._local_versions[version_with_suffix] = extracted_path
-                print(f"Added local version {version_with_suffix}")
+                synchronized_print(f"Added local version {version_with_suffix}")
             except Exception as e:
-                print(f"Error extracting {local_version['filename']}: {e}")
-
+                synchronized_print(f"Error extracting {local_version['filename']}: {e}")
+'''
     def analyze_local_versions(self, package_name: str) -> List[FileMetrics]:
         """Analyzes all local versions of the package."""
         if not self._local_versions:
@@ -121,3 +118,4 @@ class LocalVersionAnalyzer:
                 print(f"Error analyzing {file_path}: {e}")
 
         return metrics_list
+'''
