@@ -1,6 +1,7 @@
 from typing import List, Dict
 
 from models import *
+from utils.logging_utils import synchronized_print
 from .categories import *
 
 class VersionComparator:
@@ -13,11 +14,10 @@ class VersionComparator:
         self.cryptojacking_comparator = CryptojackingComparator()
         self.account_comparator = AccountComparator()
 
-    def compare_tags(self, prev_tag_metrics: Dict, curr_tag_metrics: Dict, package: str, version_from: str, version_to: str) -> RedFlag:
+    def compare_tags(self, all_prev_tag_metrics: Dict, prev_tag_metrics: Dict, curr_tag_metrics: Dict, package: str, version_from: str, version_to: str) -> RedFlag:
         """Compare two tags (versions) and return red flags"""
 
         red_flags = {}
-        
         red_flags.update(self.evasion_comparator.compare(prev_tag_metrics, curr_tag_metrics))
         red_flags.update(self.payload_comparator.compare(prev_tag_metrics, curr_tag_metrics))
         red_flags.update(self.data_exfiltration_comparator.compare(prev_tag_metrics, curr_tag_metrics))
@@ -32,35 +32,3 @@ class VersionComparator:
         )
         
         return change
-    
-    '''
-    def compare_versions(self, prev_metrics: List[FileMetrics], curr_metrics: List[FileMetrics]) -> List[RedFlag]:
-        """Compare two versions and return red flags"""
-        changes = []
-        
-        prev_map = {m.file_path: m for m in prev_metrics}
-        curr_map = {m.file_path: m for m in curr_metrics}
-        
-        for file_path in curr_map.keys():
-            prev = prev_map.get(file_path)
-            curr = curr_map[file_path]
-            
-            # Collect red flags from all categories
-            red_flags = {}
-            red_flags.update(self.evasion_comparator.compare(prev, curr))
-            red_flags.update(self.payload_comparator.compare(prev, curr))
-            red_flags.update(self.data_exfiltration_comparator.compare(prev, curr))
-            red_flags.update(self.cryptojacking_comparator.compare(prev, curr))
-            red_flags.update(self.account_comparator.compare(prev, curr))
-            
-            change = RedFlag(
-                package=curr.package,
-                file_path=curr.file_path,
-                version_from=prev.version if prev else "new_file",
-                version_to=curr.version,
-                **red_flags
-            )
-            changes.append(change)
-        
-        return changes
-    '''

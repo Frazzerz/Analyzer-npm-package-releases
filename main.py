@@ -53,8 +53,7 @@ def main():
         total_packages = len(packages)
         
         for i, pkg in enumerate(packages):
-            task = (pkg, args.output, i+1, total_packages, args.local, args.local_dir, args.workers)
-            result = analyze_single_package(task)
+            result = analyze_single_package(pkg, args.output, i+1, total_packages, args.local, args.local_dir, args.workers)
             results.append(result)
         
         total_time = time.time() - start_time

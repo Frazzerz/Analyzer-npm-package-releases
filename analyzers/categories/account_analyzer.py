@@ -1,4 +1,5 @@
 from typing import Dict, Optional
+from zipfile import Path
 from git import Repo
 from utils import NPMClient
 from datetime import datetime, timezone
@@ -32,7 +33,7 @@ class AccountAnalyzer:
         self._npm_cache[package_name] = npm_data
         return npm_data
     
-    def analyze(self, package_info: Dict) -> Dict:
+    def analyze(self, package_name: str, version: str, git_repo_path: Path) -> Dict:
         metrics = {
             'npm_maintainers': 0,
             'npm_maintainers_nicks': [],
@@ -52,8 +53,7 @@ class AccountAnalyzer:
             #'malicious_issues': 0              # Placeholder
         }
         
-        #return metrics
-
+        '''
         # For local versions or deobfuscated versions
         if not package_info or package_info.get('info') in ("local", "deobfuscated"):
             return metrics
@@ -61,7 +61,7 @@ class AccountAnalyzer:
         package_name = package_info.get('name', '')
         version = package_info.get('version', '')
         git_repo_path = package_info.get('git_repo_path')
-        
+        '''
         npm_data = self._get_npm_data_cached(package_name)
         if not npm_data:
             return metrics
@@ -136,13 +136,13 @@ class AccountAnalyzer:
             print(f"Error getting NPM metrics: {e}")
             return 0, [], [], '', '', self.UTC_MIN_DATETIME  # Empty content
 
-    def _get_github_metrics(self, repo_path: str, version: str) -> str:
+    def _get_github_metrics(self, repo_path: Path, version: str) -> str:
         """Returns all GitHub metrics: for now only commit_hash"""
         try:
             if not repo_path:
                 return ''  # Empty content
             
-            repo = Repo(repo_path)
+            repo = Repo(str(repo_path))
 
             # Take the cotributors from the git repository
             #contributors_names = set()

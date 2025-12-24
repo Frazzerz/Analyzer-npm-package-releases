@@ -47,19 +47,19 @@ class FileMetrics:
     hook_provider: int
 
     # ACCOUNT COMPROMISE & RELEASE INTEGRITY ANOMALIES
-    npm_maintainers: int
-    npm_maintainers_nicks: List[str]
-    npm_maintainers_emails: List[str]
-    npm_maintainer_published_release: str
+    ##npm_maintainers: int
+    ##npm_maintainers_nicks: List[str]
+    ##npm_maintainers_emails: List[str]
+    ##npm_maintainer_published_release: str
     #github_contributors: int
     #github_contributors_nicks: List[str]
     #github_contributors_emails: List[str]
     #github_publisher_release: str
     #github_repository_owner: str
-    npm_hash_commit: str
-    github_hash_commit: str
-    #npm_hash_file: str
+    ##npm_hash_commit: str
+    ##github_hash_commit: str
+    ##npm_hash_file: str
     #github_hash_file: str
-    npm_release_date: str
+    ##npm_release_date: str
     #'github_release_date': str
     #malicious_issues: int
