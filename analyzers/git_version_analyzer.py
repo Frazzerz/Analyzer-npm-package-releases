@@ -14,9 +14,10 @@ from packaging.version import Version
 class GitVersionAnalyzer:
     """Handles analysis of versions from a Git repository"""
 
-    def __init__(self, max_processes: int = 1, include_local: bool = False, local_versions_dir: str = "./other_versions"):
+    def __init__(self, max_processes: int = 1, include_local: bool = False, local_versions_dir: str = "./other_versions", package_name: str = "", output_dir: Path = Path(".")):
+        self.package_name = package_name
+        self.output_dir = output_dir
         self.code_analyzer = CodeAnalyzer()
-        self.file_handler = FileHandler()
         self.max_processes = max_processes
         self.include_local = include_local
         self.local_versions_dir = local_versions_dir
@@ -25,12 +26,12 @@ class GitVersionAnalyzer:
         """Normalize Git tag by removing leading 'v' if present"""
         return tag.name.lstrip("v")
     
-    def analyze_git_versions(self, package_name: str, repo: Repo, output_dir: Path) -> None:
+    def analyze_git_versions(self, repo: Repo) -> None:
         """Analyze all Git versions of the package"""
 
         tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
         if not tags:
-            synchronized_print(f"No tags found for {package_name}")
+            synchronized_print(f"No tags found for {self.package_name}")
             return []
 
         synchronized_print(f"Found {len(tags)} Git tags")
@@ -51,8 +52,8 @@ class GitVersionAnalyzer:
             )
 
         if self.include_local:
-            synchronized_print(f"Including local versions in Git analysis for {package_name}")
-            localversionanalyzer = LocalVersionAnalyzer(local_versions_dir=self.local_versions_dir, pkg_name=package_name)
+            synchronized_print(f"Including local versions in Git analysis for {self.package_name}")
+            localversionanalyzer = LocalVersionAnalyzer(local_versions_dir=self.local_versions_dir, pkg_name=self.package_name)
             localversionanalyzer.setup_local_versions()
             entries = localversionanalyzer.unite_versions(entries)
 
@@ -67,17 +68,17 @@ class GitVersionAnalyzer:
                 
                 
                 # curr_metrics è una lista di FileMetrics
-                curr_metrics = self._analyze_version(package_name, entry.name, repo_path, entry.source)
+                curr_metrics = self._analyze_version(entry.name, repo_path, entry.source)
                 
                 obfuscated_files = [f for f in curr_metrics if f.code_type == "Obfuscated"]
                 if obfuscated_files:
                     synchronized_print(f"    Found {len(obfuscated_files)} obfuscated files in version {entry.name}")
                     for f in obfuscated_files:
-                        path_dir = Path('deobfuscated_files') / package_name / entry.name
+                        path_dir = Path('deobfuscated_files') / self.package_name / entry.name
                         path_file = path_dir / f.file_path.replace('.js', '-deobfuscated.js')
                         prova = self._analyze_single_file(
                             file_path=path_file,
-                            package_name=package_name,
+                            package_name=self.package_name,
                             version=entry.name,
                             package_dir=path_dir,
                             source="deobfuscated"
@@ -93,17 +94,17 @@ class GitVersionAnalyzer:
 
                 # all_aggregate_metrics tutte le metriche aggregate per tutti i file di tutte le versioni, tranne l'ultima (list[VersionMetrics])
                 # all_aggregate_metrics_by_tag è la lista aggregata di tutte le versioni precedenti, viene aggiornato di volta in volta
-                all_aggregate_metrics_by_tag, red_flags = self.calculate_red_flags(package_name, aggregate_metrics_by_tag, previous_aggregate_metrics, all_aggregate_metrics_by_tag)
+                all_aggregate_metrics_by_tag, red_flags = self.calculate_red_flags(self.package_name, aggregate_metrics_by_tag, previous_aggregate_metrics, all_aggregate_metrics_by_tag)
 
                 #synchronized_print(f"before previous_aggregate_metrics: {previous_aggregate_metrics}")
                 previous_aggregate_metrics = list(aggregate_metrics_by_tag)
                 #synchronized_print(f"after previous_aggregate_metrics: {previous_aggregate_metrics}")
 
                 # Incremental save detailed metrics for the current tag. Avoid pass this mega list around
-                all_metrics_csv = output_dir / "all_metrics.csv"
-                flags_csv = output_dir / "red_flags.csv"
-                aggregate_metrics_csv = output_dir / "aggregate_metrics_by_tag.csv"
-                aggregate_metrics_history_csv = output_dir / "aggregate_metrics_history.csv"
+                all_metrics_csv = self.output_dir / "all_metrics.csv"
+                flags_csv = self.output_dir / "red_flags.csv"
+                aggregate_metrics_csv = self.output_dir / "aggregate_metrics_by_tag.csv"
+                aggregate_metrics_history_csv = self.output_dir / "aggregate_metrics_history.csv"
                 
                 CSVReporter().save_metrics_single_file(all_metrics_csv, curr_metrics)
                 CSVReporter().save_metrics_single_file(aggregate_metrics_csv, aggregate_metrics_by_tag)
@@ -152,17 +153,17 @@ class GitVersionAnalyzer:
 
         return all_previous_metrics, red_flag
 
-    def _analyze_version(self, package_name: str, version: str, package_dir: Path, source: str) -> List[FileMetrics]:
+    def _analyze_version(self, version: str, package_dir: Path, source: str) -> List[FileMetrics]:
         """Analyze all files of a specific Git version"""
 
         normalized_version = version[1:] if version.startswith('v') else version  # Remove initial 'v' if present
 
-        files = self.file_handler.get_all_files(package_dir)
+        files = FileHandler().get_all_files(package_dir)
         
         if self.max_processes > 1:
-            file_results = self._analyze_files_parallel(files, package_name, normalized_version, package_dir, source)
+            file_results = self._analyze_files_parallel(files, self.package_name, normalized_version, package_dir, source)
         else:
-            file_results = self._analyze_files_sequential(files, package_name, normalized_version, package_dir, source)
+            file_results = self._analyze_files_sequential(files, self.package_name, normalized_version, package_dir, source)
         
         # Filter out None results (failed analyses)
         valid_results = [r for r in file_results if r is not None]    
@@ -204,7 +205,7 @@ class GitVersionAnalyzer:
     def _analyze_single_file(self, file_path: Path, package_name: str, version: str, package_dir: Path, source: str) -> FileMetrics:
         """Analyze a single file."""
         rel_path = str(file_path.relative_to(package_dir))
-        content = self.file_handler.read_file(file_path)
+        content = FileHandler().read_file(file_path)
 
         package_info = {
             'name': package_name,
