@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from typing import List, Dict
 from utils.logging_utils import synchronized_print
-from models.graph_label import GraphLabel
+from models import GraphLabel, AggregateMetrics
 import pandas as pd
 from packaging.version import Version
 
@@ -14,9 +14,7 @@ class GraphReporter:
 
     @staticmethod
     def generate_evolution_graphs(output_dir: Path, package_name: str) -> None:
-        from analyzers import AggregateMetricsByTag
-
-        """Generate graphs for all metrics grouped by class."""
+        """Generate graphs for all metrics grouped by class"""
 
         df = pd.read_csv(output_dir / "aggregate_metrics_by_tag.csv")
         if df.empty:
@@ -41,7 +39,7 @@ class GraphReporter:
         graphs_dir.mkdir(exist_ok=True)
                 
         # Generate graphs for each metric class
-        for class_name, metric_names in AggregateMetricsByTag.METRIC_CLASSES.items():
+        for class_name, metric_names in AggregateMetrics.METRIC_CLASSES.items():
             if class_name == 'OTHER_METRICS' or class_name == 'MAX_METRICS':
                 GraphReporter._plot_individual(
                     graphs_dir,
@@ -115,11 +113,10 @@ class GraphReporter:
 
     @staticmethod
     def _plot_individual(graphs_dir: Path, versions: List[str], version_metrics: Dict, package_name: str) -> None:
-        from analyzers import AggregateMetricsByTag
+        """Generates individual graphs for each OTHER_METRICS metric"""
 
-        """Generates individual graphs for each OTHER_METRICS metric."""
-        other_metrics = AggregateMetricsByTag.METRIC_CLASSES.get('OTHER_METRICS', [])
-        max_metrics = AggregateMetricsByTag.METRIC_CLASSES.get('MAX_METRICS', [])
+        other_metrics = AggregateMetrics.METRIC_CLASSES.get('OTHER_METRICS', [])
+        max_metrics = AggregateMetrics.METRIC_CLASSES.get('MAX_METRICS', [])
         all_metrics = other_metrics + max_metrics
 
         for metric_name in all_metrics:
