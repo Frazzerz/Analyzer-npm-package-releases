@@ -1,10 +1,9 @@
-from ast import pattern
 from pathlib import Path
 from typing import List
 import json
 import shutil
 import os
-import re
+
 class FileHandler:
     """Handles file and directory operations"""
     
@@ -17,11 +16,6 @@ class FileHandler:
             return [data] if isinstance(data, str) else data
         except Exception as e:
             raise SystemExit(f"Error reading JSON {path}: {e}")
-        
-    @staticmethod
-    def get_js_files(directory: Path) -> List[Path]:
-        """Find all JavaScript files in directory (recursive)"""
-        return list(directory.rglob('*.js'))
     
     @staticmethod
     def get_all_files(directory: Path) -> List[Path]:
@@ -62,11 +56,6 @@ class FileHandler:
         except Exception as e:
             print(f"Error reading {file_path}: {e}")
             return ""
-    
-    @staticmethod
-    def ensure_directory(directory: Path) -> None:
-        """Create directory if it doesn't exist"""
-        directory.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
     def delete_previous_analysis() -> None:
@@ -76,12 +65,12 @@ class FileHandler:
             dir_path = Path(dir_name)
             if dir_path.exists() and dir_path.is_dir():
                 shutil.rmtree(dir_path)
-                print(f"Deleted directory: {dir_path}")
+                #print(f"Deleted directory: {dir_path}")
 
         log_file = Path('log.txt')
         if log_file.exists() and log_file.is_file():
             log_file.unlink()
-            print(f"Deleted log file: {log_file}")
+            #print(f"Deleted log file: {log_file}")
 
     @staticmethod
     def remove_js_comments_easy(content):

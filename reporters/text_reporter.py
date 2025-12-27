@@ -8,6 +8,21 @@ import pandas as pd
 class TextReporter:
     """Generate red flag text report considering all red flag fields"""
 
+    def generate_log_txt(self, pkg_dir: Path, package: str, output_buffer: str) -> None:
+        """Generate log file with the captured output during analysis"""
+        pkg_output_file = pkg_dir / f"{package.replace('/', '_')}.txt"
+        captured_output = output_buffer.getvalue()
+
+        with open(pkg_output_file, 'w', encoding='utf-8') as f:
+            f.write(f"=== Analysis of {package} ===\n\n")
+            '''
+            if include_local:
+                f.write("Git versions + Local versions\n")
+            else:
+                f.write("Git versions only\n")
+            '''
+            f.write(captured_output)
+    
     @staticmethod
     def generate_compact_report(output_dir: Path, package: str) -> None:
         """Compact report showing where each red flag is active (from CSV)"""

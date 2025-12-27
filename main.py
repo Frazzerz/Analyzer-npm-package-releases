@@ -24,7 +24,7 @@ def main():
     # setup log
     original_stdout = sys.stdout
     log_path = Path(args.log)
-    FileHandler.ensure_directory(log_path.parent)
+    log_path.parent.mkdir(parents=True, exist_ok=True)
     log_file = TeeOutput(log_path)
     sys.stdout = log_file
     print(f"=== LOG ANALYSIS STARTED {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ===")
@@ -34,7 +34,6 @@ def main():
         if not packages:
             raise SystemExit("Error: No package in JSON file")
 
-        print('=' * 50)
         print('NPM PACKAGE ANALYZER')
         print(f'Packages to analyze: {len(packages)}')
         print(f'Worker(s): {args.workers}')
@@ -46,23 +45,14 @@ def main():
             print(f'Log: {args.log}')
         print('=' * 50)
 
-        FileHandler.ensure_directory(Path(args.output))
+        Path(args.output).mkdir(parents=True, exist_ok=True)
 
         start_time = time.time()
-        results = []
-        total_packages = len(packages)
-        
         for i, pkg in enumerate(packages):
-            result = analyze_single_package(pkg, args.output, i+1, total_packages, args.local, args.local_dir, args.workers)
-            results.append(result)
+            analyze_single_package(pkg, args.output, i+1, len(packages), args.local, args.local_dir, args.workers)
         
         total_time = time.time() - start_time
-
-        print('\n' + '=' * 50)
-        print('ANALYSIS COMPLETED')
-        print(f'Total time: {total_time:.1f}s')
-        print(f'Packages analyzed: {len(results)}')
-        print('=' * 50)
+        print(f'=== ANALYSIS COMPLETED. Total time: {total_time:.1f}s ===')
 
     finally:
         if args.log:

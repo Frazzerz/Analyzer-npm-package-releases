@@ -1,8 +1,7 @@
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from git import Repo
 import requests
-import shutil
 import subprocess
 import os
 from .logging_utils import synchronized_print
@@ -127,12 +126,3 @@ class NPMClient:
                 except:
                     pass    
             return None
-
-    def get_package_tags(self, repo: Repo) -> List[str]:
-        """Return tags sorted chronologically"""
-        try:
-            tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
-            return [t.name for t in tags]
-        except Exception as e:
-            print(f"Error retrieving tags: {e}")
-            return []

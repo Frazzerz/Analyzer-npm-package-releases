@@ -6,6 +6,7 @@ from .code_analyzer import CodeAnalyzer
 
 class DeobfuscatedAnalyzer:
     """Analyzer for deobfuscated files of a package"""
+    '''NON USO PIÙ'''
     
     def __init__(self, code_analyzer: CodeAnalyzer, file_handler: FileHandler):
         self.code_analyzer = code_analyzer
