@@ -8,21 +8,22 @@ from .logging_utils import synchronized_print
 
 class NPMClient:
     """Cloning Git repos associated with a pkg and retrieving ordered tags"""
-    def __init__(self, registry_url: str = "https://registry.npmjs.org"):
+    def __init__(self, registry_url: str = "https://registry.npmjs.org", pkg_name: str = ""):
+        self.pkg_name = pkg_name
         self.registry_url = registry_url
-        
-    def get_npm_package_data(self, package_name: str) -> Optional[Dict]:
+    
+    def get_npm_package_data(self) -> Optional[Dict]:
         """Fetch raw metadata for an NPM package by making an HTTP request to the registry"""
         try:
-            response = requests.get(f'{self.registry_url}/{package_name}', timeout=5)
+            response = requests.get(f'{self.registry_url}/{self.pkg_name}', timeout=5)
             response.raise_for_status()
             return response.json()
         
         except requests.exceptions.RequestException as e:
-            print(f"Failed to fetch '{package_name}': {e}")
+            print(f"Failed to fetch '{self.pkg_name}': {e}")
             return None
     
-    def get_package_git_url(self, package_name: str) -> Optional[str]:
+    def get_package_git_url(self) -> Optional[str]:
         """Extracts and normalizes the Git repository URL for an NPM package"""
         '''
         try:
@@ -35,7 +36,7 @@ class NPMClient:
             )
             git_url = json.loads(result.stdout.strip())
         '''
-        data = self.get_npm_package_data(package_name)
+        data = self.get_npm_package_data()
         if not data:
             return None
         
@@ -65,21 +66,21 @@ class NPMClient:
         
         return git_url
 
-    def clone_package_repo(self, package_name: str, repos_dir: Path = Path("repos")) -> Optional[Repo]:
+    def clone_package_repo(self, repos_dir: Path = Path("repos")) -> Optional[Repo]:
         """Clone an NPM package's Git repository in the `repos/` directory. If the repository has already been cloned previously, reuse it"""
         
-        git_url = self.get_package_git_url(package_name)
+        git_url = self.get_package_git_url()
         if not git_url:
-            print(f"No Git URL found for {package_name}")
+            print(f"No Git URL found for {self.pkg_name}")
             return None
-
+        
         repos_dir.mkdir(exist_ok=True)
-        repo_name = package_name.replace('/', '_')
+        repo_name = self.pkg_name.replace('/', '_')
         repo_path = repos_dir / repo_name
 
         # Reuse the repository if it already exists
         if repo_path.exists() and (repo_path / ".git").exists():
-            print(f"Existing repository found for {package_name}")
+            print(f"Existing repository found for {self.pkg_name}")
             return Repo(repo_path)
 
         try:
@@ -88,11 +89,11 @@ class NPMClient:
             #env = os.environ.copy()
             #env['GIT_TERMINAL_PROMPT'] = '0'  # Disable interactive prompt
             #env['GIT_ASKPASS'] = 'echo'       # Return empty password
-            synchronized_print(f"Cloning repository for {package_name} from {git_url}...")
+            synchronized_print(f"Cloning repository for {self.pkg_name} from {git_url}...")
             '''
             # Clone with GitPython, no timeout
             repo = Repo.clone_from(git_url, repo_path)
-            synchronized_print(f"Repository cloned for {package_name}")
+            synchronized_print(f"Repository cloned for {self.pkg_name}")
             return repo
             '''
             # Clone with subprocess, with timeout
@@ -104,18 +105,18 @@ class NPMClient:
                 env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'}
             )
             if result.returncode == 0:
-                synchronized_print(f"Repository cloned for {package_name}")
+                synchronized_print(f"Repository cloned for {self.pkg_name}")
                 return Repo(repo_path)
 
         except Exception as e:
             
             error_msg = str(e).lower()
             if 'authentication' in error_msg or 'credentials' in error_msg:
-                print(f"Repository for {package_name} requires authentication")
+                print(f"Repository for {self.pkg_name} requires authentication")
             elif 'timed out' in error_msg:
-                print(f"Cloning repository for {package_name} timed out")
+                print(f"Cloning repository for {self.pkg_name} timed out")
             else:
-                print(f"Error cloning {package_name}: {e}")
+                print(f"Error cloning {self.pkg_name}: {e}")
             # Alternative tests could be done to try to download it via other means
 
             # Clean up partial clone if it exists

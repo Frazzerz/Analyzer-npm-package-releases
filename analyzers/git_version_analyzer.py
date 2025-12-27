@@ -14,44 +14,17 @@ from packaging.version import Version
 class GitVersionAnalyzer:
     """Handles analysis of versions from a Git repository"""
 
-    def __init__(self, code_analyzer: CodeAnalyzer, file_handler: FileHandler, max_processes: int = 1, include_local: bool = False, local_versions_dir: str = "./other_versions"):
-        self.code_analyzer = code_analyzer
-        self.file_handler = file_handler
+    def __init__(self, max_processes: int = 1, include_local: bool = False, local_versions_dir: str = "./other_versions"):
+        self.code_analyzer = CodeAnalyzer()
+        self.file_handler = FileHandler()
         self.max_processes = max_processes
         self.include_local = include_local
         self.local_versions_dir = local_versions_dir
 
-    def normalize_git_tag(self, tag):
+    def normalize_git_tag(self, tag) -> str:
+        """Normalize Git tag by removing leading 'v' if present"""
         return tag.name.lstrip("v")
     
-    def unite_versions(self, repo: Repo, localversionanalyzer: LocalVersionAnalyzer) -> List[VersionEntry]:
-        entries = []
-        # Git tags
-        for tag in repo.tags:
-            v_str = self.normalize_git_tag(tag)
-            entries.append(
-                VersionEntry(
-                    version=Version(v_str),
-                    name=tag.name,
-                    source="git",
-                    ref=tag
-                )
-            )
-        # Local versions
-        for v_name, path in localversionanalyzer._local_versions.items():
-            clean_version = v_name.replace("-local", "")
-            entries.append(
-                VersionEntry(
-                    version=Version(clean_version),
-                    name=v_name,
-                    source="local",
-                    ref=path
-                )
-            )
-
-        # ORDINAMENTO FINALE
-        return sorted(entries, key=lambda e: e.version)
-
     def analyze_git_versions(self, package_name: str, repo: Repo, output_dir: Path) -> None:
         """Analyze all Git versions of the package"""
 
@@ -64,21 +37,24 @@ class GitVersionAnalyzer:
         
         previous_aggregate_metrics = []
         all_aggregate_metrics_by_tag = []
-        repo_path = Path(repo.working_tree_dir)
+        entries = []
+
+        # Git tags
+        for tag in tags:
+            entries.append(
+                VersionEntry(
+                    version=Version(self.normalize_git_tag(tag)),
+                    name=tag.name,
+                    source="git",
+                    ref=tag
+                )
+            )
 
         if self.include_local:
             synchronized_print(f"Including local versions in Git analysis for {package_name}")
-            localversionanalyzer = LocalVersionAnalyzer(self.code_analyzer, self.file_handler, local_versions_dir=self.local_versions_dir)
-            localversionanalyzer.setup_local_versions(package_name)
-
-        entries = self.unite_versions(repo, localversionanalyzer) if self.include_local else [
-            VersionEntry(
-                version=Version(self.normalize_git_tag(tag)),
-                name=tag.name,
-                source="git",
-                ref=tag
-            ) for tag in tags
-        ]
+            localversionanalyzer = LocalVersionAnalyzer(local_versions_dir=self.local_versions_dir, pkg_name=package_name)
+            localversionanalyzer.setup_local_versions()
+            entries = localversionanalyzer.unite_versions(entries)
 
         for i, entry in enumerate(entries):
             synchronized_print(f"  [{i+1}/{len(entries)}] Analyzing tag {entry.name}")
@@ -88,6 +64,8 @@ class GitVersionAnalyzer:
                     repo_path = Path(repo.working_tree_dir)
                 if entry.source == "local":
                     repo_path = entry.ref / "package"  # entry.ref is the path to the extracted local version
+                
+                
                 # curr_metrics è una lista di FileMetrics
                 curr_metrics = self._analyze_version(package_name, entry.name, repo_path, entry.source)
                 
@@ -110,7 +88,7 @@ class GitVersionAnalyzer:
                 
                 # aggregate_metrics_by_tag tutte le metriche aggregate per tutti i file per ogni versione (list[list[VersionMetrics]])
                 # aggregate_metrics_by_tag è il corrente, Calculate also metrics for account categories
-                aggregate_metrics_by_tag = AggregateMetricsByTag.aggregate_metrics_by_tag(curr_metrics, repo_path, entry.source)
+                aggregate_metrics_by_tag = AggregateMetricsByTag().aggregate_metrics_by_tag(curr_metrics, repo_path, entry.source)
                 #synchronized_print(f"aggregate: {aggregate_metrics_by_tag}")
 
                 # all_aggregate_metrics tutte le metriche aggregate per tutti i file di tutte le versioni, tranne l'ultima (list[VersionMetrics])

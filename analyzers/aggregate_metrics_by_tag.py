@@ -130,7 +130,7 @@ class AggregateMetricsByTag:
         # 2. aggrego
         for (package, version), metrics in grouped.items():
             # Calculate also metrics for account categories
-            account_metrics = AccountAnalyzer().analyze(package, version, repo_path, source)
+            account_metrics = AccountAnalyzer(pkg_name=package).analyze(package, version, repo_path, source)
 
             vm = VersionMetrics(
                 package=package,

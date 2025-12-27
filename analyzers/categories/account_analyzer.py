@@ -9,8 +9,8 @@ class AccountAnalyzer:
     
     UTC_MIN_DATETIME = datetime.min.replace(tzinfo=timezone.utc)
 
-    def __init__(self):
-        self.npm_client = NPMClient()
+    def __init__(self, pkg_name: str = ""):
+        self.npm_client = NPMClient(pkg_name=pkg_name)
         # Manual cache with limit (FIFO)
         self._npm_cache = {}
         self._cache_max_size = 6
@@ -22,7 +22,7 @@ class AccountAnalyzer:
             return self._npm_cache[package_name]
         
         # Otherwise, fetch from NPM
-        npm_data = self.npm_client.get_npm_package_data(package_name)
+        npm_data = self.npm_client.get_npm_package_data()
         
         # If the cache is full, remove the oldest (first inserted)
         if len(self._npm_cache) >= self._cache_max_size:

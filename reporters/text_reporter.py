@@ -1,14 +1,11 @@
 from pathlib import Path
-from typing import List
-from dataclasses import asdict, fields
-from collections import defaultdict
-from models import RedFlag
 import pandas as pd
 
 class TextReporter:
     """Generate red flag text report considering all red flag fields"""
 
-    def generate_log_txt(self, pkg_dir: Path, package: str, output_buffer: str) -> None:
+    @staticmethod
+    def generate_log_txt(pkg_dir: Path, package: str, output_buffer: str) -> None:
         """Generate log file with the captured output during analysis"""
         pkg_output_file = pkg_dir / f"{package.replace('/', '_')}.txt"
         captured_output = output_buffer.getvalue()
@@ -31,7 +28,6 @@ class TextReporter:
         csv_file = output_dir / "red_flags.csv"
 
         df = pd.read_csv(csv_file)
-
         if df.empty:
             print(f"No metrics to plot for {package}")
             return
@@ -46,7 +42,6 @@ class TextReporter:
             f.write("=" * 60 + "\n\n")
 
             any_flag = False
-
             for _, row in df.iterrows():
                 version_key = f"{row['version_from']} → {row['version_to']}"
 

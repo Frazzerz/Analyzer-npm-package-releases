@@ -1,121 +1,125 @@
-from utils import FileHandler, LocalVersionManager, synchronized_print
-from .code_analyzer import CodeAnalyzer
+from utils import synchronized_print
+import os
+import re
+import tarfile
+from pathlib import Path
+from typing import List, Dict, Optional
+from models import VersionEntry
+from packaging.version import Version
 
-'''
-def version_key(tag: str):
-    """Sort key for versions that handles numeric parts and local suffixes."""
-    is_local = "-local" in tag
-    core = tag.replace("-local", "") if is_local else tag
-    core = core[1:] if core.startswith("v") else core
-
-    parts = []
-    for p in core.split('.'):
-        try:
-            # Handles parts with suffixes like "1.0.0-beta"
-            if '-' in p:
-                main_part, suffix = p.split('-', 1)
-                parts.append(int(main_part))
-                parts.append(('suffix', suffix))
-            else:
-                parts.append(int(p))
-        except ValueError:
-            parts.append(9999)      # non-numeric values ​​sent to the end
-
-    return (parts, 0 if is_local else 1, tag)  # local before others
-'''
 class LocalVersionAnalyzer:
-    """Manages the analysis of local versions."""
-    def __init__(self, code_analyzer: CodeAnalyzer, file_handler: FileHandler, local_versions_dir: str):
-        self.code_analyzer = code_analyzer
-        self.file_handler = file_handler
-        self.local_version_manager = LocalVersionManager(local_versions_dir)
+    """Manages loading and extracting local versions"""
+    def __init__(self, local_versions_dir: str = "./other_versions", pkg_name: str = ""):
+        self.pkg_name = pkg_name
+        self.local_versions_dir = Path(local_versions_dir)
+        self.local_extract_dir = self.local_versions_dir / "extracted"
         self._local_versions = {}
-
-    def setup_local_versions(self, package_name: str):
-        """Sets up local versions for analysis."""
-        local_versions = self.local_version_manager.get_local_versions_for_package(package_name)
+        
+    def setup_local_versions(self) -> None:
+        """Sets up local versions for analysis"""
+        local_versions = self._get_local_versions_for_package()
         if not local_versions:
-            synchronized_print(f"No local versions found for {package_name}")
+            synchronized_print(f"No local versions found for {self.pkg_name}")
             return
 
-        synchronized_print(f"Found {len(local_versions)} local versions for {package_name}")
-        self.local_version_manager.local_extract_dir.mkdir(parents=True, exist_ok=True)
+        synchronized_print(f"Found {len(local_versions)} local versions for {self.pkg_name}")
+        self.local_extract_dir.mkdir(parents=True, exist_ok=True)
 
         for local_version in local_versions:
             try:
-                extracted_path = self.local_version_manager.extract_local_version(
+                extracted_path = self._extract_local_version(
                     local_version,
-                    self.local_version_manager.local_extract_dir
+                    self.local_extract_dir
                 )
                 version_with_suffix = f"{local_version['version']}-local"
                 self._local_versions[version_with_suffix] = extracted_path
                 synchronized_print(f"Added local version {version_with_suffix}")
             except Exception as e:
                 synchronized_print(f"Error extracting {local_version['filename']}: {e}")
-'''
-    def analyze_local_versions(self, package_name: str) -> List[FileMetrics]:
-        """Analyzes all local versions of the package."""
-        if not self._local_versions:
+
+    def _get_local_versions_for_package(self) -> List[Dict]:
+        """Finds all local versions for a package"""
+        if not self.local_versions_dir.exists():
             return []
+        
+        package_short = self.pkg_name.split('/')[-1].lower()
+        local_versions = []
+        
+        for filename in os.listdir(self.local_versions_dir):
+            if not filename.endswith('.tgz'):
+                continue
+            
+            name_without_ext = filename[:-4]
+            parsed = self._parse_local_filename(name_without_ext)
+            
+            if parsed:
+                file_package, file_version = parsed
+                if file_package.lower() == package_short:
+                    full_path = self.local_versions_dir / filename
+                    local_versions.append({
+                        'version': file_version,
+                        'path': full_path,
+                        'filename': filename,
+                        'package_detected': file_package
+                    })
+        
+        return local_versions
+    
+    def _parse_local_filename(self, filename: str) -> Optional[tuple]:
+        """Parses the filename to extract package and version"""
+        cleaned = filename.lstrip('@')
+        
+        # Try format @package@version
+        if '@' in cleaned:
+            parts = cleaned.rsplit('@', 1)
+            if len(parts) == 2:
+                package, version = parts
+                if self._is_valid_version(version):
+                    return (package, version)
+        
+        # Try format package-version
+        version_pattern = r'(\d+\.\d+\.\d+(?:[-._]?[a-zA-Z0-9]+)*)' # at least 3 numbers separated by periods and optionally allows suffixes like -alpha
+        matches = list(re.finditer(version_pattern, filename))
+        
+        if matches:
+            last_match = matches[-1]
+            version = last_match.group(1)
+            repo_end_idx = last_match.start()
+            package = filename[:repo_end_idx].rstrip('-')
+            if package and self._is_valid_version(version):
+                return (package, version)
+        
+        return None
+    
+    def _is_valid_version(self, version_str: str) -> bool:
+        """Checks if the string is a valid version"""
+        return bool(re.match(r'^\d+\.\d+', version_str))    # Begin with one or more digits, followed by a dot , followed by one or more digits and they may have something else after them
+    
+    def _extract_local_version(self, local_version_info: Dict, destination_dir: Path) -> Path:
+        """Extracts a local version"""
+        tgz_path = local_version_info['path']
+        version = local_version_info['version']
+        package = local_version_info.get('package_detected', 'unknown')
+        
+        extract_path = destination_dir / f"{package}-{version}-local"
+        extract_path.mkdir(parents=True, exist_ok=True)
+        
+        with tarfile.open(tgz_path, 'r:gz') as tar:
+            tar.extractall(path=extract_path)
+        
+        return extract_path
+    
+    def unite_versions(self, entries) -> List[VersionEntry]:
+        """Combines Git and local versions into a single sorted list of VersionEntry"""
 
-        print(f"Analyzing {len(self._local_versions)} local versions")
-        all_metrics = []
-
-        sorted_versions = sorted(self._local_versions.keys(), key=version_key)
-
-        #for version in sorted_versions:
-        for i, version in enumerate(sorted_versions, 1):
-            package_dir = self._local_versions[version]
-            #print(f"  Local version {version}")
-            synchronized_print(f"  [{i}/{len(sorted_versions)}] Analyzing {package_name} - Local version: {version}")
-            try:
-                curr_metrics = self._analyze_version(package_name, version, package_dir)
-                all_metrics.extend(curr_metrics)
-                print(f"    Analyzed {len(curr_metrics)} files")
-
-            except Exception as e:
-                print(f"Error analyzing local version {version}: {e}")
-
-        return all_metrics
-
-    def _analyze_version(self, package_name: str, version: str, package_dir: Path) -> List[FileMetrics]:
-        """Analyzes all files of a specific local version."""
-        metrics_list = []
-
-        actual_package_dir = package_dir
-        if (package_dir / 'package').exists():
-            actual_package_dir = package_dir / 'package'
-
-        files = self.file_handler.get_all_files(actual_package_dir)
-
-        for file_path in files:
-            try:
-                rel_path = self.local_version_manager.normalize_local_file_path(
-                    str(file_path.relative_to(actual_package_dir))
+        for v_name, path in self._local_versions.items():
+            clean_version = v_name.replace("-local", "")
+            entries.append(
+                VersionEntry(
+                    version=Version(clean_version),
+                    name=v_name,
+                    source="local",
+                    ref=path
                 )
-                content = self.file_handler.read_file(file_path)
-                
-                package_info = {
-                    'name': package_name,
-                    'version': version,      # Local version indicator included
-                    'file_name': rel_path,
-                    'info': "local"
-                }
-
-                file_metrics = self.code_analyzer.analyze_file(
-                    content, 
-                    package_info=package_info
-                )
-
-                metrics = FileMetrics(
-                    package=package_name,
-                    version=version,
-                    file_path=rel_path,
-                    **file_metrics
-                )
-                metrics_list.append(metrics)
-            except Exception as e:
-                print(f"Error analyzing {file_path}: {e}")
-
-        return metrics_list
-'''
+            )
+        return sorted(entries, key=lambda e: e.version)
