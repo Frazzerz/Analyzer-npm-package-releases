@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 @dataclass
 class RedFlag:
-    """Red flags indicating significant changes between two versions of a package"""
+    """Red flags indicating significant changes"""
     package: str
     version_from: str
     version_to: str
@@ -25,7 +25,7 @@ class RedFlag:
     # DATA EXFILTRATION & C2
     scan_functions_increase_significant: bool
     sensitive_elements_increase_significant: bool
-    #data_transmission_increase: bool
+    data_transmission_increase: bool
 
     # CRYPTOJACKING & WALLET THEFT
     crypto_addresses_introduced: bool
@@ -43,11 +43,7 @@ class RedFlag:
     #npm_awakening_inactive_maintainer: bool
     #npm_new_maintainer_published_first_time_releases: bool
     #github_new_contributors: bool
-    #github_publisher_release: bool
-    #github_repository_owner: bool
     hash_mismatch_commit_between_npm_and_github: bool
     #npm_before_github: bool            # test
-    #hash_mismatch_file_between_npm_and_github: bool
     #anomalous_time: bool
     package_reactivation: bool
-    #dependency_issues_keywords: bool

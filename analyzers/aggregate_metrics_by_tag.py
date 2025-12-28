@@ -45,6 +45,7 @@ class AggregateMetricsByTag:
             
             scan_functions_count=sum(fm.scan_functions_count for fm in metrics),
             sensitive_elements_count=sum(fm.sensitive_elements_count for fm in metrics),
+            data_transmission_count=sum(fm.data_transmission_count for fm in metrics),
             
             crypto_addresses=sum(fm.crypto_addresses for fm in metrics),
             list_crypto_addresses=list({addr for fm in metrics for addr in fm.list_crypto_addresses}),
@@ -61,7 +62,8 @@ class AggregateMetricsByTag:
             total_files= len(metrics),
             file_size_bytes=sum(fm.file_size_bytes for fm in metrics),
             avg_blank_space_ratio=mean(fm.blank_space_and_character_ratio for fm in metrics),
-            longest_line_length=max(fm.longest_line_length for fm in metrics)
+            longest_line_length=max(fm.longest_line_length for fm in metrics),
+            shannon_entropy=mean(fm.shannon_entropy for fm in metrics)
         )
 
         version_metrics.append(vm)
@@ -85,12 +87,15 @@ class AggregateMetricsByTag:
                 code_types=list(set(first.code_types)),
                 obfuscation_patterns_count=first.obfuscation_patterns_count,
                 platform_detections_count=first.platform_detections_count,
+                
                 timing_delays_count=first.timing_delays_count,
                 eval_count=first.eval_count,
                 shell_commands_count=first.shell_commands_count,
                 list_preinstall_scripts=list(set(first.list_preinstall_scripts)),
+                
                 scan_functions_count=first.scan_functions_count,
                 sensitive_elements_count=first.sensitive_elements_count,
+                data_transmission_count=first.data_transmission_count,
 
                 crypto_addresses=first.crypto_addresses,
                 list_crypto_addresses=list(set(first.list_crypto_addresses)),
@@ -108,6 +113,7 @@ class AggregateMetricsByTag:
                 file_size_bytes=first.file_size_bytes,
                 avg_blank_space_ratio=first.avg_blank_space_ratio,
                 longest_line_length=first.longest_line_length,
+                shannon_entropy=first.shannon_entropy
             )
 
             aggregated._last_version = first.version
@@ -129,12 +135,15 @@ class AggregateMetricsByTag:
             code_types=list(set(prev.code_types) | set(curr.code_types)),
             obfuscation_patterns_count=prev.obfuscation_patterns_count + curr.obfuscation_patterns_count,
             platform_detections_count=prev.platform_detections_count + curr.platform_detections_count,
+            
             timing_delays_count=prev.timing_delays_count + curr.timing_delays_count,
             eval_count=prev.eval_count + curr.eval_count,
             shell_commands_count=prev.shell_commands_count + curr.shell_commands_count,
             list_preinstall_scripts=list(set(prev.list_preinstall_scripts) | set(curr.list_preinstall_scripts)),
+            
             scan_functions_count=prev.scan_functions_count + curr.scan_functions_count,
             sensitive_elements_count=prev.sensitive_elements_count + curr.sensitive_elements_count,
+            data_transmission_count=prev.data_transmission_count + curr.data_transmission_count,
             
             crypto_addresses=prev.crypto_addresses + curr.crypto_addresses,
             list_crypto_addresses=list(set(prev.list_crypto_addresses) | set(curr.list_crypto_addresses)),
@@ -152,7 +161,8 @@ class AggregateMetricsByTag:
             file_size_bytes=prev.file_size_bytes + (curr.file_size_bytes - prev.file_size_bytes) / (n + 1),
             avg_blank_space_ratio=prev.avg_blank_space_ratio + (curr.avg_blank_space_ratio - prev.avg_blank_space_ratio) / (n + 1),
             longest_line_length=prev.longest_line_length + (curr.longest_line_length - prev.longest_line_length) / (n + 1),
-            
+            shannon_entropy=prev.shannon_entropy + (curr.shannon_entropy - prev.shannon_entropy) / (n + 1)
+
         )
         aggregated._last_version = curr.version
         aggregated._count = n + 1

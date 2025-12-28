@@ -4,6 +4,7 @@ from typing import List
 
 @dataclass
 class VersionMetrics:
+    """Aggregated metrics for a specific package version"""
     package: str
     version: str
 
@@ -18,6 +19,7 @@ class VersionMetrics:
 
     scan_functions_count: int
     sensitive_elements_count: int
+    data_transmission_count: int
 
     crypto_addresses: int
     list_crypto_addresses: List[str]
@@ -36,5 +38,5 @@ class VersionMetrics:
     total_files: int
     file_size_bytes: int
     avg_blank_space_ratio: float
-
+    shannon_entropy: float
     longest_line_length: int

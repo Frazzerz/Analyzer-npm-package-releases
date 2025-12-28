@@ -48,14 +48,19 @@ class DataExfiltrationAnalyzer:
         ),
     ]
 
+    DATA_TRANSMISSION_PATTERNS: List[Pattern] = [
+        re.compile(r'(\w+)\.(post|get|put|delete|request)\s*\(\s*[\'"]?(https?:\/\/[^\s\'"]+)[\'"]?', re.IGNORECASE),   # http methods
+        re.compile(r'new\s+WebSocket\s*\(\s*[\'"]?(wss?:\/\/[^\s\'"]+)[\'"]?', re.IGNORECASE),                          # WebSocket connections
+    ]
+
     def analyze(self, content: str) -> Dict:
         metrics = {
             'scan_functions_count': 0,
             'list_scan_functions': [],
             'sensitive_elements_count': 0,
             'list_sensitive_elements': [],
-            #'data_transmission_count': 0,      # Placeholder
-            #'list_data_transmission': [],      # Placeholder
+            'data_transmission_count': 0,
+            'list_data_transmission': [],
         }
 
         if not content:
@@ -63,4 +68,5 @@ class DataExfiltrationAnalyzer:
 
         metrics['scan_functions_count'],  metrics['list_scan_functions'] = UtilsForAnalyzer.detect_patterns(content, self.SCAN_FUNCTIONS_PATTERNS)
         metrics['sensitive_elements_count'], metrics['list_sensitive_elements'] = UtilsForAnalyzer.detect_patterns(content, self.SCANNED_ELEMENTS_PATTERNS)
+        metrics['data_transmission_count'], metrics['list_data_transmission'] = UtilsForAnalyzer.detect_patterns(content, self.DATA_TRANSMISSION_PATTERNS)
         return metrics

@@ -36,16 +36,11 @@ class AccountAnalyzer:
             'npm_maintainer_published_release': '',
             #'github_contributors': 0,
             #'github_contributors_nicks': [],
-            #'github_contributors_emails': [],            
-            #'github_publisher_release': '',    # Placeholder
-            #'github_repository_owner': '',     # Placeholder
+            #'github_contributors_emails': [],
             'npm_hash_commit': '',
             'github_hash_commit': '',
-            #'npm_hash_file': '',               # Placeholder
-            #'github_hash_file': '',            # Placeholder
             'npm_release_date': AccountAnalyzer.UTC_MIN_DATETIME,        # missing date, empty metrics
             #'github_release_date': AccountAnalyzer.UTC_MIN_DATETIME,    # missing date, empty metrics
-            #'malicious_issues': 0              # Placeholder
         }
 
         if source in ("local", "deobfuscated"):
