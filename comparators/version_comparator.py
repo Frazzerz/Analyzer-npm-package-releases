@@ -1,6 +1,5 @@
-from typing import List, Dict
-
-from models import *
+from typing import Dict
+from models import RedFlag
 from utils.logging_utils import synchronized_print
 from .categories import *
 

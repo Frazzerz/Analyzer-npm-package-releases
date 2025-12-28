@@ -63,13 +63,13 @@ class VersionAnalyzer:
 
                 # all_aggregate_metrics tutte le metriche aggregate per tutti i file di tutte le versioni, tranne l'ultima (list[VersionMetrics])
                 # all_aggregate_metrics_by_tag è la lista aggregata di tutte le versioni precedenti, viene aggiornato di volta in volta
-                all_aggregate_metrics_by_tag, red_flags = self.calculate_red_flags(self.package_name, aggregate_metrics_by_tag, previous_aggregate_metrics, all_aggregate_metrics_by_tag)
+                all_aggregate_metrics_by_tag, red_flags = self.calculate_red_flags(aggregate_metrics_by_tag, previous_aggregate_metrics, all_aggregate_metrics_by_tag)
 
                 #synchronized_print(f"before previous_aggregate_metrics: {previous_aggregate_metrics}")
                 previous_aggregate_metrics = list(aggregate_metrics_by_tag)
                 #synchronized_print(f"after previous_aggregate_metrics: {previous_aggregate_metrics}")
 
-                # Incremental save detailed metrics for the current tag. Avoid pass this mega list around
+                # Incremental save detailed metrics for the current tag
                 all_metrics_csv = self.output_dir / "all_metrics.csv"
                 flags_csv = self.output_dir / "red_flags.csv"
                 aggregate_metrics_csv = self.output_dir / "aggregate_metrics_by_tag.csv"
@@ -85,48 +85,42 @@ class VersionAnalyzer:
 
         return
     
-    def calculate_red_flags(self, package_name: str, current_metrics: List[VersionMetrics], previous_metrics: List[VersionMetrics], all_previous_metrics: List[VersionMetrics]) -> (List[RedFlag], VersionMetrics):
+    def calculate_red_flags(self, current_metrics: List[VersionMetrics], previous_metrics: List[VersionMetrics], all_previous_metrics: List[VersionMetrics]) -> (List[RedFlag], VersionMetrics):
         
         comparator = VersionComparator()
         #synchronized_print(f"previous_metrics {previous_metrics}")
         
-        # Prendiamo l'ultimo previous per il confronto
         prev_metrics_obj = previous_metrics[0] if previous_metrics else None
         curr_metrics_obj = current_metrics[0]
 
-        # Converto in dict per il comparator
+        # Convert to dict for the comparator
         prev_metrics_dict = prev_metrics_obj.__dict__ if prev_metrics_obj else None
         curr_metrics_dict = curr_metrics_obj.__dict__
 
-        # Versioni per il red flag
         version_from = prev_metrics_obj.version if prev_metrics_obj else "first"
         version_to = curr_metrics_obj.version
 
-        # all_previous_metrics come dict (se serve)
+        # all_previous_metrics is a dict
         all_prev_dict = {m.version: m.__dict__ for m in all_previous_metrics}
 
-        # Chiamo il comparator
         red_flag = comparator.compare_tags(
             all_prev_tag_metrics=all_prev_dict,
             prev_tag_metrics=prev_metrics_dict,
             curr_tag_metrics=curr_metrics_dict,
-            package=package_name,
+            package=self.package_name,
             version_from=version_from,
             version_to=version_to
         )
         #synchronized_print(f"Red flags: {red_flag}")
-
         #synchronized_print(f"all_previous_metrics before aggregation: {all_previous_metrics}")  
         all_previous_metrics = AggregateMetricsByTag.aggregate_metrics_incremental(all_previous_metrics, current_metrics)
         #synchronized_print(f"all_previous_metrics after aggregation: {all_previous_metrics}")
-
         return all_previous_metrics, red_flag
 
     def _analyze_version(self, version: str, package_dir: Path, source: str) -> List[FileMetrics]:
         """Analyze all files of a specific Git version"""
 
         normalized_version = version[1:] if version.startswith('v') else version  # Remove initial 'v' if present
-
         files = FileHandler().get_all_files(package_dir)
         
         if self.max_processes > 1:
@@ -139,7 +133,7 @@ class VersionAnalyzer:
         return valid_results
 
     def _analyze_files_sequential(self, files: List[Path], version: str, package_dir: Path, source: str) -> List[FileMetrics]:
-        """Sequential analysis of files."""
+        """Sequential analysis of files"""
         results = []
         for file_path in files:
             try:
@@ -151,7 +145,7 @@ class VersionAnalyzer:
         return results
 
     def _analyze_files_parallel(self, files: List[Path], version: str, package_dir: Path, source: str) -> List[FileMetrics]:
-        """Parallel analysis of files."""
+        """Parallel analysis of files"""
         # Prepare arguments for each file
         args_list = []
         for file_path in files:
@@ -183,12 +177,8 @@ class VersionAnalyzer:
             'file_name': rel_path,
             'info': source
         }
-        
-        file_metrics = self.code_analyzer.analyze_file(
-            content, 
-            package_info=package_info
-        )
 
+        file_metrics = self.code_analyzer.analyze_file(content, package_info)
         metrics = FileMetrics(
             package=self.package_name,
             version=version,

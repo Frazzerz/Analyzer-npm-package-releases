@@ -71,11 +71,10 @@ class AggregateMetricsByTag:
     @staticmethod
     def aggregate_metrics_incremental(previous_metrics: List[VersionMetrics], current_metrics: List[VersionMetrics]) -> List[VersionMetrics]:
         
-         # Nessun dato
         if not previous_metrics and not current_metrics:
             return []
 
-        # 🔹 Caso iniziale: nessun precedente
+        # Initial case: no previous metrics
         if not previous_metrics:
             first = current_metrics[0]
 
@@ -111,65 +110,50 @@ class AggregateMetricsByTag:
                 longest_line_length=first.longest_line_length,
             )
 
-            # Salvo la versione reale per le aggregazioni successive
-            aggregated._last_real_version = first.version
+            aggregated._last_version = first.version
             aggregated._count = 1
             return [aggregated]
 
-        # 🔹 Aggregazione incrementale vera
+        # General case: aggregate previous and current metrics
         prev = previous_metrics[0]
         curr = current_metrics[0]
-        n = getattr(prev, "_count", 1)
+        n = getattr(prev, "_count")
 
-        # Versione corretta: ultima versione reale del precedente + versione corrente
-        last_real_version = getattr(prev, "_last_real_version", prev.version)
-        new_version_str = f"all up to {last_real_version} (included) + {curr.version} (included)"
+        last_version = getattr(prev, "_last_version", prev.version)
+        new_version_str = f"all up to {last_version} (included) + {curr.version} (included)"
 
         aggregated = VersionMetrics(
             package=prev.package,
             version=new_version_str,
 
-            # ---- concatenazioni incrementali ----
             code_types=list(set(prev.code_types) | set(curr.code_types)),
-            list_preinstall_scripts=list(
-                set(prev.list_preinstall_scripts) | set(curr.list_preinstall_scripts)
-            ),
-            list_crypto_addresses=list(
-                set(prev.list_crypto_addresses) | set(curr.list_crypto_addresses)
-            ),
-
-            # ---- somme incrementali ----
             obfuscation_patterns_count=prev.obfuscation_patterns_count + curr.obfuscation_patterns_count,
             platform_detections_count=prev.platform_detections_count + curr.platform_detections_count,
             timing_delays_count=prev.timing_delays_count + curr.timing_delays_count,
             eval_count=prev.eval_count + curr.eval_count,
             shell_commands_count=prev.shell_commands_count + curr.shell_commands_count,
+            list_preinstall_scripts=list(set(prev.list_preinstall_scripts) | set(curr.list_preinstall_scripts)),
             scan_functions_count=prev.scan_functions_count + curr.scan_functions_count,
             sensitive_elements_count=prev.sensitive_elements_count + curr.sensitive_elements_count,
+            
             crypto_addresses=prev.crypto_addresses + curr.crypto_addresses,
+            list_crypto_addresses=list(set(prev.list_crypto_addresses) | set(curr.list_crypto_addresses)),
             cryptocurrency_name=prev.cryptocurrency_name + curr.cryptocurrency_name,
             wallet_detection=prev.wallet_detection + curr.wallet_detection,
             replaced_crypto_addresses=prev.replaced_crypto_addresses + curr.replaced_crypto_addresses,
             hook_provider=prev.hook_provider + curr.hook_provider,
-
-            # ---- medie incrementali ----
+            
             npm_maintainers=prev.npm_maintainers + (curr.npm_maintainers - prev.npm_maintainers) / (n + 1),
-            total_files=prev.total_files + (curr.total_files - prev.total_files) / (n + 1),
-            file_size_bytes=prev.file_size_bytes + (curr.file_size_bytes - prev.file_size_bytes) / (n + 1),
-            avg_blank_space_ratio=prev.avg_blank_space_ratio + (
-                curr.avg_blank_space_ratio - prev.avg_blank_space_ratio
-            ) / (n + 1),
-            longest_line_length=prev.longest_line_length + (
-                curr.longest_line_length - prev.longest_line_length
-            ) / (n + 1),
-
-            # ---- ultimo valore noto ----
             npm_hash_commit=curr.npm_hash_commit,
             github_hash_commit=curr.github_hash_commit,
             npm_release_date=curr.npm_release_date,
+            
+            total_files=prev.total_files + (curr.total_files - prev.total_files) / (n + 1),
+            file_size_bytes=prev.file_size_bytes + (curr.file_size_bytes - prev.file_size_bytes) / (n + 1),
+            avg_blank_space_ratio=prev.avg_blank_space_ratio + (curr.avg_blank_space_ratio - prev.avg_blank_space_ratio) / (n + 1),
+            longest_line_length=prev.longest_line_length + (curr.longest_line_length - prev.longest_line_length) / (n + 1),
+            
         )
-
-        aggregated._last_real_version = curr.version
+        aggregated._last_version = curr.version
         aggregated._count = n + 1
-        
         return [aggregated]
