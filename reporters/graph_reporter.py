@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import pandas as pd
 from models import GraphLabel
+from matplotlib.ticker import MaxNLocator
 
 class GraphReporter:
 
@@ -36,13 +37,6 @@ class GraphReporter:
 
         # versions already ordered in CSV
         versions = df["version"].tolist()
-        # for x-axis labels
-        max_labels = 10
-        x = range(len(versions))
-        step = max(1, len(versions) // max_labels)
-
-        # index once for O(1) access
-        df = df.set_index("version")
 
         # generate graphs
         for category in GraphLabel.METRICS.values():
@@ -51,20 +45,8 @@ class GraphReporter:
                 if metric_key not in df.columns:
                     continue
 
-                # vectorized extraction
-                values = (
-                    df.loc[versions, metric_key]
-                    .fillna(0)
-                    .tolist()
-                )
-
-                history_values = (
-                    df_history[metric_key]
-                    .reindex(range(len(versions)))
-                    .ffill()
-                    .fillna(0)
-                    .tolist()
-                )
+                values = (df[metric_key].tolist())
+                history_values = (df_history[metric_key].tolist())
 
                 # plot
                 plt.figure(figsize=(10, 5))
@@ -90,11 +72,10 @@ class GraphReporter:
                 plt.title(f"{label} - {package_name}")
                 plt.xlabel("Version")
                 plt.ylabel(label)
-                plt.xticks(
-                    ticks=x[::step],
-                    labels=[versions[i] for i in x[::step]],
-                    rotation=45
-                )
+                # set x axis to have a maximum of 12 ticks
+                ax = plt.gca()
+                ax.xaxis.set_major_locator(MaxNLocator(nbins=12))
+                plt.xticks(rotation=45)
                 plt.grid(True)
                 plt.legend()
                 plt.tight_layout()
