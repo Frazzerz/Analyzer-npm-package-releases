@@ -39,7 +39,11 @@ class PackageAnalyzer:
             synchronized_print(f"No tags found for {self.pkg_name}")
             return []
         synchronized_print(f"Found {len(tags)} Git tags")
-        
+
+        if len(tags) > 80:
+            tags = tags[-80:]    # Limit to last 80 tags
+            synchronized_print(f"Analyzing only the last {len(tags)} Git tags")
+
         entries = []
         # Git tags
         for tag in tags:

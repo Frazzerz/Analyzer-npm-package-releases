@@ -27,15 +27,8 @@ class GraphReporter:
         ]
 
         # read only required columns
-        df = pd.read_csv(
-            metrics_file,
-            usecols=["version", *metric_keys]
-        )
-
-        df_history = pd.read_csv(
-            history_file,
-            usecols=metric_keys
-        )
+        df = pd.read_csv(metrics_file,usecols=["version", *metric_keys])
+        df_history = pd.read_csv(history_file,usecols=metric_keys)
 
         if df.empty and df_history.empty:
             print(f"No metrics to plot for {package_name}")
@@ -43,6 +36,11 @@ class GraphReporter:
 
         # versions already ordered in CSV
         versions = df["version"].tolist()
+        # for x-axis labels
+        max_labels = 10
+        x = range(len(versions))
+        step = max(1, len(versions) // max_labels)
+
         # index once for O(1) access
         df = df.set_index("version")
 
@@ -92,7 +90,11 @@ class GraphReporter:
                 plt.title(f"{label} - {package_name}")
                 plt.xlabel("Version")
                 plt.ylabel(label)
-                plt.xticks(rotation=45)
+                plt.xticks(
+                    ticks=x[::step],
+                    labels=[versions[i] for i in x[::step]],
+                    rotation=45
+                )
                 plt.grid(True)
                 plt.legend()
                 plt.tight_layout()

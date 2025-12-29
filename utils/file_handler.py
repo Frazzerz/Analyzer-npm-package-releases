@@ -73,7 +73,7 @@ class FileHandler:
             #print(f"Deleted log file: {log_file}")
 
     @staticmethod
-    def remove_js_comments_easy(content):
+    def remove_js_comments_easy(content: str) -> str:
         '''Remove JavaScript comments from content, only if starting at the beginning of the line'''
         out = []
         in_block = False

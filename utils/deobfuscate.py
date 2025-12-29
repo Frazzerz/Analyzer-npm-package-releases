@@ -4,7 +4,7 @@ import os
 class Deobfuscator:
 
     @staticmethod
-    def deobfuscate(content: str, package_name: str, version: str, file_name: str):
+    def deobfuscate(content: str, package_name: str, version: str, file_name: str) -> None:
         """Deobfuscates a JavaScript file using the obfuscator-io-deobfuscator tool"""
 
         print(f"Find deobfuscated js file! For package {package_name} version {version}, file {file_name}. Starting try to deobfuscate...")
@@ -24,16 +24,14 @@ class Deobfuscator:
             temp_file = f.name
 
         command = ['obfuscator-io-deobfuscator', temp_file, '-o', output_file]      # Build the command to run
-        
         try:
-            result = subprocess.run(command, check=True, capture_output=True, text=True)
-            
+            result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=120)    
             if result.returncode == 0:
                 print(f"Success! Deobfuscated file saved to: {output_file}")
-            else:
-                print("An error occurred during deobfuscation: ", result.stderr)
                 
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to run the deobfuscator. Error: {e}")
-        except FileNotFoundError:
-            print("Error: The 'obfuscator-io-deobfuscator' command was not found. Please ensure it is installed globally using npm")
+        except Exception as e:
+            error_msg = str(e).lower()
+            if 'timed out' in error_msg:
+                print(f"Deobfuscation process timed out for file: {file_name}")
+            else:
+                print(f"An error occurred during deobfuscation of file {file_name}: {e}")

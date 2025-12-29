@@ -45,5 +45,5 @@ class PayloadComparator:
                 'shell_commands_increase_significant': shell_increase >= 5 and shell_increase > prev_shell * 0.5,
                 'size_bytes_increase_significant': curr_size_bytes > prev_size_bytes * 10,
                 'preinstall_scripts_introduced': not prev_has_preinstall and curr_has_preinstall,
-                'preinstall_scripts_change': prev_has_preinstall != curr_has_preinstall and prev_has_preinstall,
+                'preinstall_scripts_change': prev_has_preinstall != curr_has_preinstall and prev_has_preinstall and curr_has_preinstall,
             }
