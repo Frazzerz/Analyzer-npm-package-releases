@@ -1,66 +1,104 @@
 import matplotlib.pyplot as plt
 from pathlib import Path
 import pandas as pd
-from packaging.version import Version
 from models import GraphLabel
 
 class GraphReporter:
-    """Generate evolution graphs for metrics across versions"""
 
     @staticmethod
-    def normalize_version(v: str) -> Version:
-        return Version(v.lstrip("v").replace("-local", ""))
-
-    @staticmethod
-    def generate_evolution_graphs(output_dir: Path, package_name: str) -> None:
+    def generate_graphs(output_dir: Path, package_name: str) -> None:
         """Generate one graph per metric"""
 
-        df = pd.read_csv(output_dir / "aggregate_metrics_by_tag.csv")
-        if df.empty:
+        metrics_file = output_dir / "aggregate_metrics_by_tag.csv"
+        history_file = output_dir / "aggregate_metrics_history.csv"
+
+        if not metrics_file.exists() and not history_file.exists():
             print(f"No metrics to plot for {package_name}")
             return
 
-        sorted_versions = sorted(df['version'].unique(),key=GraphReporter.normalize_version)
-
         graphs_dir = output_dir / "graphs"
         graphs_dir.mkdir(exist_ok=True)
-        color_cycle = iter(GraphLabel.COLOR_PALETTE)
 
-        # Iterate over ALL metrics defined in GraphLabel
+        # collect all metric keys once
+        metric_keys = [
+            metric_key
+            for category in GraphLabel.METRICS.values()
+            for metric_key in category["metrics"]
+        ]
+
+        # read only required columns
+        df = pd.read_csv(
+            metrics_file,
+            usecols=["version", *metric_keys]
+        )
+
+        df_history = pd.read_csv(
+            history_file,
+            usecols=metric_keys
+        )
+
+        if df.empty and df_history.empty:
+            print(f"No metrics to plot for {package_name}")
+            return
+
+        # versions already ordered in CSV
+        versions = df["version"].tolist()
+        # index once for O(1) access
+        df = df.set_index("version")
+
+        # generate graphs
         for category in GraphLabel.METRICS.values():
-            for metric_key, metric_label in category["metrics"].items():
+            for metric_key, label in category["metrics"].items():
 
                 if metric_key not in df.columns:
-                    continue  # metric not present in CSV
+                    continue
 
-                values = []
-                for version in sorted_versions:
-                    row = df[df["version"] == version]
-                    if row.empty:
-                        values.append(0)
-                    else:
-                        values.append(row.iloc[0][metric_key])
-
-                plt.figure(figsize=(10, 5))
-                plt.plot(
-                    sorted_versions,
-                    values,
-                    marker="o",
-                    color=next(color_cycle, None),
-                    linewidth=2
+                # vectorized extraction
+                values = (
+                    df.loc[versions, metric_key]
+                    .fillna(0)
+                    .tolist()
                 )
 
-                plt.title(f"{metric_label} – {package_name}")
+                history_values = (
+                    df_history[metric_key]
+                    .reindex(range(len(versions)))
+                    .ffill()
+                    .fillna(0)
+                    .tolist()
+                )
+
+                # plot
+                plt.figure(figsize=(10, 5))
+
+                plt.plot(
+                    versions,
+                    values,
+                    marker="o",
+                    linewidth=2,
+                    color="blue",
+                    label="Single version"
+                )
+
+                plt.plot(
+                    versions,
+                    history_values,
+                    linestyle="--",
+                    linewidth=2,
+                    color="red",
+                    label="History"
+                )
+
+                plt.title(f"{label} - {package_name}")
                 plt.xlabel("Version")
-                plt.ylabel(metric_label)
+                plt.ylabel(label)
                 plt.xticks(rotation=45)
                 plt.grid(True)
+                plt.legend()
                 plt.tight_layout()
 
                 output_path = graphs_dir / f"{metric_key}.png"
                 plt.savefig(output_path)
                 plt.close()
-
-                #print(f"Saved graph: {output_path}")
         
         print(f"Generated graphs for {package_name} in {graphs_dir}")

@@ -23,7 +23,7 @@ def analyze_single_package(package, out_dir, package_index, total_packages, incl
     # Text reports and graph
     TextReporter().generate_log_txt(pkg_dir, package, output_buffer)
     TextReporter().generate_compact_report(pkg_dir, package)
-    GraphReporter().generate_evolution_graphs(pkg_dir, package)
+    GraphReporter().generate_graphs(pkg_dir, package)
 
     elapsed_time = time.time() - start_time
     print(f"[{package_index}/{total_packages}] Completed: {package} ({elapsed_time:.1f}s)")

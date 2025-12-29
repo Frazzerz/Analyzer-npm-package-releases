@@ -47,6 +47,7 @@ class GraphLabel:
         'OTHER_METRICS': {
             'title': 'Other metrics',
             'metrics': {
+                'total_files': 'Total files',
                 'file_size_bytes': 'File size (bytes)',
                 'avg_blank_space_ratio': 'Average blank space and character ratio',
                 'shannon_entropy': 'Shannon entropy',
@@ -54,9 +55,3 @@ class GraphLabel:
             }
         }
     }
-    
-    COLOR_PALETTE = [
-        '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
-        '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
-        '#1a55FF', '#FF5733', '#33FF57', '#FF33F6', '#33FFF6'
-    ]
