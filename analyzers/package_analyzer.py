@@ -40,8 +40,8 @@ class PackageAnalyzer:
             return []
         synchronized_print(f"Found {len(tags)} Git tags")
 
-        if len(tags) > 40:
-            tags = tags[-40:]    # Limit to last 40 tags
+        if len(tags) > 50:
+            tags = tags[-50:]    # Limit to last 50 tags
             synchronized_print(f"Analyzing only the last {len(tags)} Git tags")
 
         entries = []

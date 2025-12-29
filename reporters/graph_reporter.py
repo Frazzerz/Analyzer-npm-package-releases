@@ -73,8 +73,9 @@ class GraphReporter:
                 plt.xlabel("Version")
                 plt.ylabel(label)
                 # set x axis to have a maximum of 12 ticks
-                ax = plt.gca()
-                ax.xaxis.set_major_locator(MaxNLocator(nbins=12))
+                if len(versions) > 12:
+                    ax = plt.gca()
+                    ax.xaxis.set_major_locator(MaxNLocator(nbins=12))
                 plt.xticks(rotation=45)
                 plt.grid(True)
                 plt.legend()

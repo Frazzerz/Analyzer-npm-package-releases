@@ -49,8 +49,10 @@ class DataExfiltrationAnalyzer:
     ]
 
     DATA_TRANSMISSION_PATTERNS: List[Pattern] = [
-        re.compile(r'(\w+)\.(post|get|put|delete|request)\s*\(\s*[\'"]?(https?:\/\/[^\s\'"]+)[\'"]?', re.IGNORECASE),   # http methods
-        re.compile(r'new\s+WebSocket\s*\(\s*[\'"]?(wss?:\/\/[^\s\'"]+)[\'"]?', re.IGNORECASE),                          # WebSocket connections
+        # ex. client.request(https://server.com/api)
+        re.compile(r'(\w+)\.(post|get|put|delete|request)\s*\(\s*[\'"]?(https?:\/\/[^\s\'"]+)[\'"]?', re.IGNORECASE),
+        # ex. new WebSocket("wss://example.com")
+        re.compile(r'new\s+WebSocket\s*\(\s*[\'"]?(wss?:\/\/[^\s\'"]+)[\'"]?', re.IGNORECASE),
     ]
 
     def analyze(self, content: str) -> Dict:
