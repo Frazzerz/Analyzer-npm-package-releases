@@ -3,7 +3,6 @@ from zipfile import Path
 from models.metrics import FileMetrics
 from models.version_metrics import VersionMetrics
 from typing import List
-from statistics import mean
 from analyzers.categories import AccountAnalyzer
 from utils import synchronized_print
 
@@ -60,10 +59,18 @@ class AggregateMetricsByTag:
             npm_release_date=account_metrics.get('npm_release_date'),
             
             total_files= len(metrics),
+            file_size_chars=sum(fm.file_size_chars for fm in metrics),
             file_size_bytes=sum(fm.file_size_bytes for fm in metrics),
-            avg_blank_space_ratio=mean(fm.blank_space_and_character_ratio for fm in metrics),
+            # In this way the average is calculated over all files
+            #avg_blank_space_and_character_ratio=mean(fm.blank_space_and_character_ratio for fm in metrics),
+            # To calculate the average blank space ratio for the version, we need to calculate the weighted average based on character size
+            avg_blank_space_and_character_ratio=sum(fm.blank_space_and_character_ratio * fm.file_size_chars for fm in metrics) / sum(fm.file_size_chars for fm in metrics) if sum(fm.file_size_chars for fm in metrics) > 0 else 0.0,
             longest_line_length=max(fm.longest_line_length for fm in metrics),
-            shannon_entropy=mean(fm.shannon_entropy for fm in metrics)
+            # in this way the shannon entropy is averaged over all files
+            #shannon_entropy=mean(fm.shannon_entropy for fm in metrics)
+            # to calculate the shannon entropy of the version, we need to calculate the weighted average based on character size
+            # Rappresent the average information content per byte of the entire version
+            shannon_entropy=sum(fm.shannon_entropy * fm.file_size_chars for fm in metrics) / sum(fm.file_size_chars for fm in metrics) if sum(fm.file_size_chars for fm in metrics) > 0 else 0.0
         )
 
         version_metrics.append(vm)
@@ -110,8 +117,9 @@ class AggregateMetricsByTag:
                 npm_release_date=first.npm_release_date,
 
                 total_files=first.total_files,
+                file_size_chars=first.file_size_chars,
                 file_size_bytes=first.file_size_bytes,
-                avg_blank_space_ratio=first.avg_blank_space_ratio,
+                avg_blank_space_and_character_ratio=first.avg_blank_space_and_character_ratio,
                 longest_line_length=first.longest_line_length,
                 shannon_entropy=first.shannon_entropy
             )
@@ -159,8 +167,9 @@ class AggregateMetricsByTag:
             npm_release_date=curr.npm_release_date,
             
             total_files=prev.total_files + (curr.total_files - prev.total_files) / (n + 1),
+            file_size_chars=prev.file_size_chars + (curr.file_size_chars - prev.file_size_chars) / (n + 1),
             file_size_bytes=prev.file_size_bytes + (curr.file_size_bytes - prev.file_size_bytes) / (n + 1),
-            avg_blank_space_ratio=prev.avg_blank_space_ratio + (curr.avg_blank_space_ratio - prev.avg_blank_space_ratio) / (n + 1),
+            avg_blank_space_and_character_ratio=prev.avg_blank_space_and_character_ratio + (curr.avg_blank_space_and_character_ratio - prev.avg_blank_space_and_character_ratio) / (n + 1),
             longest_line_length=prev.longest_line_length + (curr.longest_line_length - prev.longest_line_length) / (n + 1),
             shannon_entropy=prev.shannon_entropy + (curr.shannon_entropy - prev.shannon_entropy) / (n + 1)
 

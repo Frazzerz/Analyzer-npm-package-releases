@@ -1,5 +1,5 @@
 from typing import Dict
-from .categories import EvasionAnalyzer, PayloadAnalyzer, DataExfiltrationAnalyzer, CryptojackingAnalyzer
+from .categories import EvasionAnalyzer, PayloadAnalyzer, DataExfiltrationAnalyzer, CryptojackingAnalyzer, GenericAnalyzer
 
 class CodeAnalyzer:
     """Coordinates analysis across all categories"""
@@ -9,11 +9,13 @@ class CodeAnalyzer:
         self.payload_analyzer = PayloadAnalyzer()
         self.data_exfiltration_analyzer = DataExfiltrationAnalyzer()
         self.cryptojacking_analyzer = CryptojackingAnalyzer()
+        self.generic_analyzer = GenericAnalyzer()
 
     def analyze_file(self, content: str, package_info: Dict) -> Dict:
         """Analyze a single file and return all metrics"""
         metrics = {}
         
+        metrics.update(self.generic_analyzer.analyze(content))
         metrics.update(self.evasion_analyzer.analyze(content, package_info))
         metrics.update(self.payload_analyzer.analyze(content, package_info))
         metrics.update(self.data_exfiltration_analyzer.analyze(content))

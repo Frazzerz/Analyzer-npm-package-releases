@@ -7,6 +7,7 @@ class VersionComparator:
     """Coordinate version comparison across all categories"""
     
     def __init__(self):
+        self.generic_comparator = GenericComparator()
         self.evasion_comparator = EvasionComparator()
         self.payload_comparator = PayloadComparator()
         self.data_exfiltration_comparator = DataExfiltrationComparator()
@@ -17,6 +18,7 @@ class VersionComparator:
         """Compare two tags (versions) and return red flags"""
 
         red_flags = {}
+        red_flags.update(self.generic_comparator.compare(prev_tag_metrics, curr_tag_metrics))
         red_flags.update(self.evasion_comparator.compare(prev_tag_metrics, curr_tag_metrics))
         red_flags.update(self.payload_comparator.compare(prev_tag_metrics, curr_tag_metrics))
         red_flags.update(self.data_exfiltration_comparator.compare(prev_tag_metrics, curr_tag_metrics))

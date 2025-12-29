@@ -36,7 +36,8 @@ class VersionMetrics:
 
     # GENERIC METRICS
     total_files: int
-    file_size_bytes: int
-    avg_blank_space_ratio: float
+    file_size_bytes: bytes
+    file_size_chars: int
+    avg_blank_space_and_character_ratio: float
     shannon_entropy: float
     longest_line_length: int

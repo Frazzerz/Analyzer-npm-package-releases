@@ -8,13 +8,17 @@ class FileMetrics:
     version: str
     file_path: str
     
+    # GENERIC METRICS
+    file_size_bytes: bytes
+    file_size_chars: int
+    blank_space_and_character_ratio: float
+    shannon_entropy: float
+
     # EVASION TECHNIQUES
     code_type: str
     obfuscation_patterns_count: int
     list_obfuscation_patterns: List[str]
     longest_line_length: int
-    blank_space_and_character_ratio: float
-    shannon_entropy: float
     platform_detections_count: int
     list_platform_detections: List[str]
     
@@ -25,7 +29,6 @@ class FileMetrics:
     eval_list: List[str]
     shell_commands_count: int
     list_shell_commands: List[str]
-    file_size_bytes: int
     preinstall_scripts: bool
     list_preinstall_scripts: List[str]
 

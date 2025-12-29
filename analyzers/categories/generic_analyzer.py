@@ -1,0 +1,43 @@
+from typing import Dict
+import math
+from utils import synchronized_print
+
+class GenericAnalyzer:
+    """Obtain generic metrics from files"""
+
+    def analyze(self, content: str) -> Dict:
+        metrics = {
+            'file_size_bytes': len(content.encode("utf-8")),
+            'file_size_chars': len(content),
+            'blank_space_and_character_ratio': 0.0,
+            'shannon_entropy': 0.0,
+        }
+
+        if not content:
+            return metrics
+
+        whitespace_count = sum(1 for c in content if c.isspace())
+        metrics['blank_space_and_character_ratio'] = whitespace_count / metrics['file_size_chars'] if content else 0.0
+        metrics['shannon_entropy'] = self._calculate_shannon_entropy(content)
+        #no_empty_lines = len([r for r in content.splitlines() if r.strip()])
+
+        return metrics
+    
+    def _calculate_shannon_entropy(self, content: str) -> float:
+        """Calculate Shannon entropy of the content"""
+        if not content:
+            return 0.0
+
+        # Calculate frequency of each character in the content
+        freq = {}
+        for char in content:
+            freq[char] = freq.get(char, 0) + 1
+
+        # Calculate the Shannon entropy
+        entropy = 0.0
+        length = len(content)
+        for count in freq.values():
+            probability = count / length
+            entropy -= probability * math.log2(probability)
+
+        return entropy

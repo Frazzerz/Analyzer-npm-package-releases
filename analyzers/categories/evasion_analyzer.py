@@ -2,8 +2,8 @@ import re
 from typing import Dict, List, Pattern
 from utils import Deobfuscator, UtilsForAnalyzer
 import jsbeautifier
-import math
 from utils import synchronized_print
+
 class EvasionAnalyzer:
     """Analyze evasion techniques"""
 
@@ -43,9 +43,7 @@ class EvasionAnalyzer:
             'code_type': 'None',
             'obfuscation_patterns_count': 0,
             'list_obfuscation_patterns': [],
-            'longest_line_length': 0,
-            'blank_space_and_character_ratio': 0.0,
-            'shannon_entropy': 0.0,
+            'longest_line_length': max(len(r) for r in content.splitlines()) if content.splitlines() else 0,
             'platform_detections_count': 0,
             'list_platform_detections': []
         }
@@ -62,12 +60,6 @@ class EvasionAnalyzer:
         metrics['obfuscation_patterns_count'], metrics['list_obfuscation_patterns'] = UtilsForAnalyzer.detect_patterns(content, self.OBFUSCATION_PATTERNS)
         metrics['platform_detections_count'], metrics['list_platform_detections'] = UtilsForAnalyzer.detect_patterns(content, self.PLATFORM_PATTERNS)
         
-        metrics['longest_line_length'] = max(len(r) for r in content.splitlines()) if content.splitlines() else 0        
-        whitespace_count = sum(1 for c in content if c.isspace())
-        metrics['blank_space_and_character_ratio'] = whitespace_count / len(content) if content else 0.0
-        metrics['shannon_entropy'] = self._calculate_shannon_entropy(content)
-        no_empty_lines = len([r for r in content.splitlines() if r.strip()])
-
         if (package_info['info'] == 'deobfuscated'):
             code_type = 'Deobfuscated'
         elif (self._detect_obfuscated_code(metrics['obfuscation_patterns_count'], metrics['longest_line_length'])):
@@ -101,22 +93,3 @@ class EvasionAnalyzer:
         """Attempt to unminify code"""
         print("Unminifying code...")
         return jsbeautifier.beautify(content)
-
-    def _calculate_shannon_entropy(self, content: str) -> float:
-        """Calculate Shannon entropy of the content"""
-        if not content:
-            return 0.0
-
-        # Calculate frequency of each character in the content
-        freq = {}
-        for char in content:
-            freq[char] = freq.get(char, 0) + 1
-
-        # Calculate the Shannon entropy
-        entropy = 0.0
-        length = len(content)
-        for count in freq.values():
-            probability = count / length
-            entropy -= probability * math.log2(probability)
-
-        return entropy

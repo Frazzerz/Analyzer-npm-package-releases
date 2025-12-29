@@ -50,7 +50,6 @@ class PayloadAnalyzer:
             'eval_list': [],
             'shell_commands_count': 0,
             'list_shell_commands': [],
-            'file_size_bytes': len(content.encode('utf-8')),
             'preinstall_scripts': 0,
             'list_preinstall_scripts': [],
         }

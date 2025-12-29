@@ -49,7 +49,7 @@ class GraphLabel:
             'metrics': {
                 'total_files': 'Total files',
                 'file_size_bytes': 'File size (bytes)',
-                'avg_blank_space_ratio': 'Average blank space and character ratio',
+                'avg_blank_space_and_character_ratio': 'Average blank space and character ratio',
                 'shannon_entropy': 'Shannon entropy',
                 'longest_line_length': 'Longest line length',
             }
