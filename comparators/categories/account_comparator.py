@@ -1,14 +1,14 @@
-from typing import Dict, Optional
+from typing import Dict
 from datetime import datetime, timedelta, timezone
-
+from models import VersionMetrics, AggregateVersionMetrics
 class AccountComparator:
-    """Compare account compromise & release integrity anomalies metrics between two versions (tags) to identify red flags"""
+    """Compare account compromise & release integrity anomalies metrics between versions (tags) to identify flags"""
     
-    def compare(self, prev_tag_metrics: Optional[Dict], curr_tag_metrics: Dict) -> Dict:
+    def compare(self, prev_tag_metrics: VersionMetrics, curr_tag_metrics: VersionMetrics, all_prev_tag_metrics: AggregateVersionMetrics) -> Dict:
         
         UTC_MIN_DATETIME = datetime.min.replace(tzinfo=timezone.utc)
 
-        if prev_tag_metrics is None:
+        if prev_tag_metrics.version == "":
             # No comparison for first version - return no flags
             return {
                 #'npm_new_maintainer': False,
@@ -21,22 +21,22 @@ class AccountComparator:
                 'package_reactivation': False
             }
         else:
-            prev_npm_date = prev_tag_metrics.get('npm_release_date')
-            if prev_npm_date is None:
+            prev_npm_date = prev_tag_metrics.npm_release_date
+            if prev_npm_date is None or prev_npm_date == "":
                 prev_npm_date = UTC_MIN_DATETIME
             elif isinstance(prev_npm_date, str):
                 prev_npm_date = datetime.fromisoformat(prev_npm_date)
 
-            curr_npm_date = curr_tag_metrics.get('npm_release_date')
-            if curr_npm_date is None:
+            curr_npm_date = curr_tag_metrics.npm_release_date
+            if curr_npm_date is None or curr_npm_date == "":
                 curr_npm_date = UTC_MIN_DATETIME
             elif isinstance(curr_npm_date, str):
                 curr_npm_date = datetime.fromisoformat(curr_npm_date)
             
-            curr_npm_hash_commit = curr_tag_metrics.get('npm_hash_commit')
+            curr_npm_hash_commit = curr_tag_metrics.npm_hash_commit
             if curr_npm_hash_commit is None:
                 curr_npm_hash_commit = ""
-            curr_github_hash_commit = curr_tag_metrics.get('github_hash_commit')
+            curr_github_hash_commit = curr_tag_metrics.github_hash_commit
             if curr_github_hash_commit is None:
                 curr_github_hash_commit = ""
             

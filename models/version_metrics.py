@@ -5,6 +5,44 @@ from typing import List
 @dataclass
 class VersionMetrics:
     """Aggregated metrics for a specific package version"""
+    def __init__(self):
+        self.package = ""
+        self.version = ""
+        
+        self.code_types = []
+        self.obfuscation_patterns_count = 0
+        self.platform_detections_count = 0
+
+        self.timing_delays_count = 0
+        self.eval_count = 0
+        self.shell_commands_count = 0
+        self.preinstall_scripts = []
+
+        self.scan_functions_count = 0
+        self.sensitive_elements_count = 0
+        self.data_transmission_count = 0
+
+        self.crypto_addresses = 0
+        self.list_crypto_addresses = []
+        self.cryptocurrency_name = 0
+        self.wallet_detection = 0
+        self.replaced_crypto_addresses = 0
+        self.hook_provider = 0
+        
+        # ACCOUNT COMPROMISE & RELEASE INTEGRITY ANOMALIES
+        self.npm_maintainers = 0
+        self.npm_hash_commit = ""
+        self.github_hash_commit = ""
+        self.npm_release_date = ""
+        
+        # GENERIC METRICS
+        self.total_files = 0
+        self.total_size_bytes = 0
+        self.total_size_chars = 0
+        self.weighted_avg_blank_space_and_character_ratio = 0.0
+        self.weighted_avg_shannon_entropy = 0.0
+        self.longest_line_length = 0
+
     package: str
     version: str
 
@@ -15,7 +53,7 @@ class VersionMetrics:
     timing_delays_count: int
     eval_count: int
     shell_commands_count: int
-    list_preinstall_scripts: List[str]
+    preinstall_scripts: List[str]
 
     scan_functions_count: int
     sensitive_elements_count: int
@@ -36,8 +74,8 @@ class VersionMetrics:
 
     # GENERIC METRICS
     total_files: int
-    file_size_bytes: bytes
-    file_size_chars: int
-    avg_blank_space_and_character_ratio: float
-    shannon_entropy: float
+    total_size_bytes: bytes
+    total_size_chars: int
+    weighted_avg_blank_space_and_character_ratio: float
+    weighted_avg_shannon_entropy: float
     longest_line_length: int

@@ -1,6 +1,7 @@
 import re
 from typing import Dict, List, Pattern
 from utils import UtilsForAnalyzer
+from utils import synchronized_print
 class PayloadAnalyzer:
     """Analyze payload delivery and execution techniques"""
     
@@ -50,8 +51,7 @@ class PayloadAnalyzer:
             'eval_list': [],
             'shell_commands_count': 0,
             'list_shell_commands': [],
-            'preinstall_scripts': 0,
-            'list_preinstall_scripts': [],
+            'preinstall_scripts': []
         }
 
         if not content:
@@ -61,6 +61,8 @@ class PayloadAnalyzer:
         metrics['eval_count'], metrics['eval_list'] = UtilsForAnalyzer.detect_patterns(content, self.EVAL_PATTERNS)
         metrics['shell_commands_count'], metrics['list_shell_commands'] = UtilsForAnalyzer.detect_patterns(content, self.SHELL_COMMANDS_PATTERNS)
         if(package_info['file_name'] == 'package.json'):
-            metrics['preinstall_scripts'], metrics['list_preinstall_scripts'] = UtilsForAnalyzer.detect_patterns(content, self.PREINSTALL_PATTERNS)
+            _, preinstall_scripts = UtilsForAnalyzer.detect_patterns(content, self.PREINSTALL_PATTERNS)
+            #Take only the first occurrence, there should be only one preinstall script in package.json
+            metrics['preinstall_scripts'] = [preinstall_scripts[0]]
 
         return metrics

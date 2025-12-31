@@ -1,11 +1,12 @@
-from typing import Dict, Optional
+from typing import Dict
+from models import VersionMetrics, AggregateVersionMetrics
 
 class CryptojackingComparator:
-    """Compare cryptojacking & wallet theft metrics between two versions (tags) to identify red flags"""
+    """Compare cryptojacking & wallet theft metrics between versions (tags) to identify flags"""
     
-    def compare(self, prev_tag_metrics: Optional[Dict], curr_tag_metrics: Dict) -> Dict:
+    def compare(self, prev_tag_metrics: VersionMetrics, curr_tag_metrics: VersionMetrics, all_prev_tag_metrics: AggregateVersionMetrics) -> Dict:
         
-        if prev_tag_metrics is None:
+        if prev_tag_metrics.version == "":
             # No comparison for first version - return no flags
             return {
                 'crypto_addresses_introduced': False,
@@ -19,23 +20,23 @@ class CryptojackingComparator:
                 'hook_provider_introduced': False
             }
         else:
-            prev_crypto = prev_tag_metrics.get('crypto_addresses')
-            curr_crypto = curr_tag_metrics.get('crypto_addresses')
+            prev_crypto = prev_tag_metrics.crypto_addresses
+            curr_crypto = curr_tag_metrics.crypto_addresses
 
-            prev_list_crypto = prev_tag_metrics.get('list_crypto_addresses')
-            curr_list_crypto = curr_tag_metrics.get('list_crypto_addresses')
+            prev_list_crypto = prev_tag_metrics.list_crypto_addresses
+            curr_list_crypto = curr_tag_metrics.list_crypto_addresses
 
-            prev_cryptocurrency = prev_tag_metrics.get('cryptocurrency_name')
-            curr_cryptocurrency = curr_tag_metrics.get('cryptocurrency_name')
+            prev_cryptocurrency = prev_tag_metrics.cryptocurrency_name
+            curr_cryptocurrency = curr_tag_metrics.cryptocurrency_name
 
-            prev_wallet = prev_tag_metrics.get('wallet_detection')
-            curr_wallet = curr_tag_metrics.get('wallet_detection')
+            prev_wallet = prev_tag_metrics.wallet_detection
+            curr_wallet = curr_tag_metrics.wallet_detection
 
-            prev_replaced = prev_tag_metrics.get('replaced_crypto_addresses')
-            curr_replaced = curr_tag_metrics.get('replaced_crypto_addresses')
+            prev_replaced = prev_tag_metrics.replaced_crypto_addresses
+            curr_replaced = curr_tag_metrics.replaced_crypto_addresses
 
-            prev_hook = prev_tag_metrics.get('hook_provider')
-            curr_hook = curr_tag_metrics.get('hook_provider')
+            prev_hook = prev_tag_metrics.hook_provider
+            curr_hook = curr_tag_metrics.hook_provider
 
             return {
                 'crypto_addresses_introduced': prev_crypto == 0 and curr_crypto > 0,

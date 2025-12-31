@@ -2,12 +2,13 @@ import csv
 from pathlib import Path
 from typing import List, Any
 from dataclasses import asdict
+from models import Flags, VersionMetrics, AggregateVersionMetrics
 
 class CSVReporter:
     """Generate CSV files with analysis results"""
 
     @staticmethod
-    def _save_csv(output_path: Path, items: List[Any], empty_message: str, append: bool = False) -> None:
+    def _save_csv_list(output_path: Path, items: List[Any], empty_message: str, append: bool = False) -> None:
         """Generic CSV saving utility"""
         if not items:
             print(empty_message.format(output_path=output_path))
@@ -25,10 +26,37 @@ class CSVReporter:
                 writer.writerow(asdict(item))
         
     @staticmethod
-    def save_metrics_single_file(output_path: Path, metrics: List[Any]) -> None:
-        CSVReporter._save_csv(
+    def save_metrics_list(output_path: Path, metrics: List[Any]) -> None:
+        CSVReporter._save_csv_list(
             output_path,
             metrics,
             empty_message="No metrics to save in {output_path}",
+            append=True
+        )
+
+    @staticmethod
+    def save_metrics_VersionMetrics(output_path: Path, metrics: VersionMetrics) -> None:
+        CSVReporter._save_csv_list(
+            output_path,
+            [metrics],
+            empty_message="No metrics to save in {output_path}",
+            append=True
+        )
+    
+    @staticmethod
+    def save_metrics_Flags(output_path: Path, metrics: Flags) -> None:
+        CSVReporter._save_csv_list(
+            output_path,
+            [metrics],
+            empty_message="No flags to save in {output_path}",
+            append=True
+        )
+    
+    @staticmethod
+    def save_metrics_AllVersionMetrics(output_path: Path, metrics: AggregateVersionMetrics) -> None:
+        CSVReporter._save_csv_list(
+            output_path,
+            [metrics],
+            empty_message="No aggregate version metrics to save in {output_path}",
             append=True
         )

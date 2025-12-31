@@ -1,11 +1,12 @@
-from typing import Dict, Optional
+from typing import Dict
+from models import VersionMetrics, AggregateVersionMetrics
 
 class PayloadComparator:
-    """Compare payload delivery & execution metrics between two versions (tags) to identify red flags"""
+    """Compare payload delivery & execution metrics between versions (tags) to identify flags"""
     
-    def compare(self, prev_tag_metrics: Optional[Dict], curr_tag_metrics: Dict) -> Dict:
+    def compare(self, prev_tag_metrics: VersionMetrics, curr_tag_metrics: VersionMetrics, all_prev_tag_metrics: AggregateVersionMetrics) -> Dict:
         
-        if prev_tag_metrics is None:
+        if prev_tag_metrics.version == "":
             # No comparison for first version - return no flags
             return {
                 'timing_delays_increase_significant': False,
@@ -17,20 +18,20 @@ class PayloadComparator:
             }
         else:
             # Existing tag
-            prev_timing = prev_tag_metrics.get('timing_delays_count')
-            curr_timing = curr_tag_metrics.get('timing_delays_count')
+            prev_timing = prev_tag_metrics.timing_delays_count
+            curr_timing = curr_tag_metrics.timing_delays_count
             timing_delays_increase = curr_timing - prev_timing
 
-            prev_eval = prev_tag_metrics.get('eval_count')
-            curr_eval = curr_tag_metrics.get('eval_count')
+            prev_eval = prev_tag_metrics.eval_count
+            curr_eval = curr_tag_metrics.eval_count
             eval_increase = curr_eval - prev_eval
 
-            prev_shell = prev_tag_metrics.get('shell_commands_count')
-            curr_shell = curr_tag_metrics.get('shell_commands_count')
+            prev_shell = prev_tag_metrics.shell_commands_count
+            curr_shell = curr_tag_metrics.shell_commands_count
             shell_increase = curr_shell - prev_shell
 
-            prev_preinstall = prev_tag_metrics.get('list_preinstall_scripts')
-            curr_preinstall = curr_tag_metrics.get('list_preinstall_scripts')
+            prev_preinstall = prev_tag_metrics.preinstall_scripts
+            curr_preinstall = curr_tag_metrics.preinstall_scripts
             prev_has_preinstall = bool(prev_preinstall)
             curr_has_preinstall = bool(curr_preinstall)
 

@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
 @dataclass
-class RedFlag:
-    """Red flags indicating significant changes"""
+class Flags:
+    """Flags indicating significant changes"""
     package: str
     version_from: str
     version_to: str

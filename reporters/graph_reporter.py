@@ -20,16 +20,16 @@ class GraphReporter:
         graphs_dir = output_dir / "graphs"
         graphs_dir.mkdir(exist_ok=True)
 
-        # collect all metric keys once
-        metric_keys = [
-            metric_key
-            for category in GraphLabel.METRICS.values()
-            for metric_key in category["metrics"]
-        ]
+        version_metric_cols = set()
+        aggregate_metric_cols = set()
 
-        # read only required columns
-        df = pd.read_csv(metrics_file,usecols=["version", *metric_keys])
-        df_history = pd.read_csv(history_file,usecols=metric_keys)
+        for category in GraphLabel.METRICS.values():
+            for vm_key, (avg_key, _) in category["metrics"].items():
+                version_metric_cols.add(vm_key)
+                aggregate_metric_cols.add(avg_key)
+
+        df = pd.read_csv(metrics_file,usecols=["version", *version_metric_cols])
+        df_history = pd.read_csv(history_file,usecols=list(aggregate_metric_cols))
 
         if df.empty and df_history.empty:
             print(f"No metrics to plot for {package_name}")
@@ -40,13 +40,10 @@ class GraphReporter:
 
         # generate graphs
         for category in GraphLabel.METRICS.values():
-            for metric_key, label in category["metrics"].items():
-
-                if metric_key not in df.columns:
-                    continue
+            for metric_key, (metric_key_hist, label) in category["metrics"].items():
 
                 values = (df[metric_key].tolist())
-                history_values = (df_history[metric_key].tolist())
+                history_values = (df_history[metric_key_hist].tolist())
 
                 # plot
                 plt.figure(figsize=(10, 5))
@@ -66,7 +63,7 @@ class GraphReporter:
                     linestyle="--",
                     linewidth=2,
                     color="red",
-                    label="History"
+                    label="Aggregate versions (avg)"
                 )
 
                 plt.title(f"{label} - {package_name}")

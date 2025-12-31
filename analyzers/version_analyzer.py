@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import List
 import multiprocessing as mp
-from models import FileMetrics, VersionMetrics, RedFlag
+from models import FileMetrics, VersionMetrics, AggregateVersionMetrics
 from reporters.csv_reporter import CSVReporter
 from utils import FileHandler, synchronized_print
 from .aggregate_metrics_by_tag import AggregateMetricsByTag
@@ -19,6 +19,7 @@ class VersionAnalyzer:
         self.local_versions_dir = local_versions_dir
         self.entries = []
         self.repo = None
+        self.comparator = VersionComparator()
     
     def analyze_versions(self) -> None:
         """Analyze all versions"""
@@ -26,8 +27,10 @@ class VersionAnalyzer:
             synchronized_print(f"No versions to analyze for {self.package_name} or repository not set")
             return
 
-        previous_aggregate_metrics = []
-        all_aggregate_metrics_by_tag = []
+        previous_aggregate_metrics = VersionMetrics()
+        all_aggregate_metrics_by_tag = AggregateVersionMetrics()
+        last_version = "first"
+        count_versions = 0
 
         for i, entry in enumerate(self.entries):
             synchronized_print(f"  [{i+1}/{len(self.entries)}] Analyzing tag {entry.name}")
@@ -38,7 +41,8 @@ class VersionAnalyzer:
                 if entry.source == "local":
                     repo_path = entry.ref / "package"  # entry.ref is the path to the extracted local version
                 
-                # curr_metrics is a list of FileMetrics
+                # curr_metrics is the list of FileMetrics for all files in the current version
+                # current_metrics ex. [[FileMetrics(package='example', version='1.0.0', file_path='index.js', ...), FileMetrics(...), ...]
                 curr_metrics = self._analyze_version(entry.name, repo_path, entry.source)
                 
                 obfuscated_files = [f for f in curr_metrics if f.code_type == "Obfuscated"]
@@ -57,65 +61,44 @@ class VersionAnalyzer:
                 
                 synchronized_print(f"    Analyzed {len(curr_metrics)} files")
                 
-                # aggregate_metrics_by_tag tutte le metriche aggregate per tutti i file per ogni versione (list[list[VersionMetrics]])
-                # aggregate_metrics_by_tag è il corrente, Calculate also metrics for account categories
+                # aggregate_metrics_by_tag is the aggregation of all metrics from the all files in the current version
+                # aggregate_metrics_by_tag ex. VersionMetrics(package='example', version='1.0.0', code_types=['Clear', ...], obfuscation_patterns_count=5, ...)
                 aggregate_metrics_by_tag = AggregateMetricsByTag().aggregate_metrics_by_tag(curr_metrics, repo_path, entry.source)
 
-                # all_aggregate_metrics tutte le metriche aggregate per tutti i file di tutte le versioni, tranne l'ultima (list[VersionMetrics])
-                # all_aggregate_metrics_by_tag è la lista aggregata di tutte le versioni precedenti, viene aggiornato di volta in volta
-                all_aggregate_metrics_by_tag, red_flags = self.calculate_red_flags(aggregate_metrics_by_tag, previous_aggregate_metrics, all_aggregate_metrics_by_tag)
+                flags = self.comparator.compare_tags(
+                    all_prev_tag_metrics=all_aggregate_metrics_by_tag,
+                    prev_tag_metrics=previous_aggregate_metrics,
+                    curr_tag_metrics=aggregate_metrics_by_tag,
+                    package=self.package_name,
+                    version_from=last_version,
+                    version_to=aggregate_metrics_by_tag.version
+                )
 
-                #synchronized_print(f"before previous_aggregate_metrics: {previous_aggregate_metrics}")
-                previous_aggregate_metrics = list(aggregate_metrics_by_tag)
-                #synchronized_print(f"after previous_aggregate_metrics: {previous_aggregate_metrics}")
+                # all_aggregate_metrics_by_tag is all aggregated metrics for all versions analyzed so far (NO last version included)
+                # is updated incrementally each time, using for identifying flags and to plot the evolution of metrics over versions
+                # all_aggregate_metrics_by_tag ex. AggregateVersionMetrics(package='example', version='all up to 1.0.0 (included) + 1.1.0 (included)', code_types=['Clear', ...], obfuscation_patterns_count=15, ...)
+                all_aggregate_metrics_by_tag = AggregateMetricsByTag.aggregate_metrics_incremental(all_aggregate_metrics_by_tag, aggregate_metrics_by_tag, count_versions, last_version)
+                
+                # Update for next iteration
+                count_versions += 1
+                last_version = aggregate_metrics_by_tag.version
+                previous_aggregate_metrics = aggregate_metrics_by_tag
 
                 # Incremental save detailed metrics for the current tag
                 all_metrics_csv = self.output_dir / "all_metrics.csv"
-                flags_csv = self.output_dir / "red_flags.csv"
+                flags_csv = self.output_dir / "flags.csv"
                 aggregate_metrics_csv = self.output_dir / "aggregate_metrics_by_tag.csv"
                 aggregate_metrics_history_csv = self.output_dir / "aggregate_metrics_history.csv"
-                
-                CSVReporter().save_metrics_single_file(all_metrics_csv, curr_metrics)
-                CSVReporter().save_metrics_single_file(aggregate_metrics_csv, aggregate_metrics_by_tag)
-                CSVReporter().save_metrics_single_file(aggregate_metrics_history_csv, all_aggregate_metrics_by_tag)
-                CSVReporter().save_metrics_single_file(flags_csv, [red_flags])
+
+                CSVReporter().save_metrics_list(all_metrics_csv, curr_metrics)
+                CSVReporter().save_metrics_VersionMetrics(aggregate_metrics_csv, aggregate_metrics_by_tag)
+                CSVReporter().save_metrics_AllVersionMetrics(aggregate_metrics_history_csv, all_aggregate_metrics_by_tag)
+                CSVReporter().save_metrics_Flags(flags_csv, flags)
 
             except Exception as e:
                 print(f"Error analyzing tag {entry.name}: {e}")
 
         return
-    
-    def calculate_red_flags(self, current_metrics: List[VersionMetrics], previous_metrics: List[VersionMetrics], all_previous_metrics: List[VersionMetrics]) -> (List[RedFlag], VersionMetrics):
-        
-        comparator = VersionComparator()
-        #synchronized_print(f"previous_metrics {previous_metrics}")
-        
-        prev_metrics_obj = previous_metrics[0] if previous_metrics else None
-        curr_metrics_obj = current_metrics[0]
-
-        # Convert to dict for the comparator
-        prev_metrics_dict = prev_metrics_obj.__dict__ if prev_metrics_obj else None
-        curr_metrics_dict = curr_metrics_obj.__dict__
-
-        version_from = prev_metrics_obj.version if prev_metrics_obj else "first"
-        version_to = curr_metrics_obj.version
-
-        # all_previous_metrics is a dict
-        all_prev_dict = {m.version: m.__dict__ for m in all_previous_metrics}
-
-        red_flag = comparator.compare_tags(
-            all_prev_tag_metrics=all_prev_dict,
-            prev_tag_metrics=prev_metrics_dict,
-            curr_tag_metrics=curr_metrics_dict,
-            package=self.package_name,
-            version_from=version_from,
-            version_to=version_to
-        )
-        #synchronized_print(f"Red flags: {red_flag}")
-        #synchronized_print(f"all_previous_metrics before aggregation: {all_previous_metrics}")  
-        all_previous_metrics = AggregateMetricsByTag.aggregate_metrics_incremental(all_previous_metrics, current_metrics)
-        #synchronized_print(f"all_previous_metrics after aggregation: {all_previous_metrics}")
-        return all_previous_metrics, red_flag
 
     def _analyze_version(self, version: str, package_dir: Path, source: str) -> List[FileMetrics]:
         """Analyze all files of a specific Git version"""

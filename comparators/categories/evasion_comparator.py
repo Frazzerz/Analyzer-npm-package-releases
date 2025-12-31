@@ -1,11 +1,12 @@
-from typing import Dict, Optional
+from typing import Dict
+from models import VersionMetrics, AggregateVersionMetrics
 
 class EvasionComparator:
-    """Compare evasion techniques metrics between two versions (tags) to identify red flags"""
+    """Compare evasion techniques metrics between versions (tags) to identify flags"""
     
-    def compare(self, prev_tag_metrics: Optional[Dict], curr_tag_metrics: Dict) -> Dict:
+    def compare(self, prev_tag_metrics: VersionMetrics, curr_tag_metrics: VersionMetrics, all_prev_tag_metrics: AggregateVersionMetrics) -> Dict:
         
-        if prev_tag_metrics is None:
+        if prev_tag_metrics.version == "":
             # No comparison for first version - return no flags
             return {
                 'obfuscated_code_introduced': False,
@@ -15,15 +16,15 @@ class EvasionComparator:
             }
         else:
             
-            prev_code_types = prev_tag_metrics.get('code_types')
-            curr_code_types = curr_tag_metrics.get('code_types')
+            prev_code_types = prev_tag_metrics.code_types
+            curr_code_types = curr_tag_metrics.code_types
 
-            prev_obfuscation = prev_tag_metrics.get('obfuscation_patterns_count')
-            curr_obfuscation = curr_tag_metrics.get('obfuscation_patterns_count')
+            prev_obfuscation = prev_tag_metrics.obfuscation_patterns_count
+            curr_obfuscation = curr_tag_metrics.obfuscation_patterns_count
             obfuscation_increase = curr_obfuscation - prev_obfuscation
             
-            prev_platform = prev_tag_metrics.get('platform_detections_count')
-            curr_platform = curr_tag_metrics.get('platform_detections_count')
+            prev_platform = prev_tag_metrics.platform_detections_count
+            curr_platform = curr_tag_metrics.platform_detections_count
             platform_increase = curr_platform - prev_platform
 
             return {

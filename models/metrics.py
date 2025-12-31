@@ -29,8 +29,7 @@ class FileMetrics:
     eval_list: List[str]
     shell_commands_count: int
     list_shell_commands: List[str]
-    preinstall_scripts: bool
-    list_preinstall_scripts: List[str]
+    preinstall_scripts: str
 
     # DATA EXFILTRATION & C2
     scan_functions_count: int
