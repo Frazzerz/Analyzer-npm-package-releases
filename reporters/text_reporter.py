@@ -20,7 +20,11 @@ class TextReporter:
 
         summary_file = output_dir / "flags_summary.txt"
         csv_file = output_dir / "flags.csv"
-        df = pd.read_csv(csv_file)
+        try:
+            df = pd.read_csv(csv_file)
+        except FileNotFoundError:
+            print(f"No flags.csv found for {package}, skipping report generation.")
+            return
         if df.empty:
             print(f"No metrics to plot for {package}")
             return

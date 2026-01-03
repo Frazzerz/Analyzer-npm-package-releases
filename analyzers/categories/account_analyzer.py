@@ -4,6 +4,7 @@ from git import Repo
 from utils import NPMClient
 from datetime import datetime, timezone
 from utils import synchronized_print
+import re
 
 class AccountAnalyzer:
     """Analyzes account compromise & release integrity anomalies"""
@@ -31,9 +32,9 @@ class AccountAnalyzer:
     def analyze(self, version: str, git_repo_path: Path, source: str) -> Dict:
         metrics = {
             'npm_maintainers': 0,
-            'npm_maintainers_nicks': [],
-            'npm_maintainers_emails': [],
-            'npm_maintainer_published_release': '',
+            #'npm_maintainers_nicks': [],
+            #'npm_maintainers_emails': [],
+            #'npm_maintainer_published_release': '', #test
             #'github_contributors': 0,
             #'github_contributors_nicks': [],
             #'github_contributors_emails': [],
@@ -46,31 +47,8 @@ class AccountAnalyzer:
         if source in ("local", "deobfuscated"):
             return metrics
         
-        # Get npm metrics
-        npm_data = self._get_npm_data_cached()
-        if npm_data and ('versions' in npm_data or version in npm_data['versions']):
-            version_data = npm_data['versions'][version]
-
-            # Get maintainers/owners
-            maintainers = version_data.get('maintainers', [])
-            metrics['npm_maintainers'] = len(maintainers)
-
-            metrics['npm_maintainers_nicks'] = [maintainer.get('name', '') for maintainer in maintainers if maintainer.get('name')]
-            metrics['npm_maintainers_emails'] = [maintainer.get('email', '') for maintainer in maintainers if maintainer.get('email')]
-                
-            # Get publisher info
-            npm_user = version_data.get('_npmUser', {})
-            metrics['npm_maintainer_published_release'] = npm_user.get('name', '') if npm_user else ''
-            
-            # Get git commit hash
-            metrics['npm_hash_commit'] = version_data.get('gitHead', "")
-            
-            # Get release time
-            if 'time' in npm_data and version in npm_data['time']:
-                metrics['npm_release_date'] = self._parse_date(npm_data['time'][version])
-        
         # Get GitHub metrics
-        if git_repo_path:    
+        if git_repo_path and source == "git":
             repo = Repo(str(git_repo_path))
             '''
             # Take the cotributors from the git repository
@@ -82,25 +60,43 @@ class AccountAnalyzer:
                     contributors_emails.add(commit.author.email)
             return len(contributors_names), list(contributors_names), list(contributors_emails)
             '''
-            tag_name = self._normalize_tag(repo, version)
-            if tag_name:
-                tag = repo.tags[tag_name]
+            try:
+                tag = repo.tags[version]
                 #commit = tag.commit
                 # test github_release_date, take the release time from GitHub repository  -  2021-11-04T17:48:07+07:00
                 #release_time = self._parse_date(commit.committed_datetime.isoformat())
                 metrics['github_hash_commit'] = tag.commit.hexsha
-       
+            except Exception as e:
+                synchronized_print(f"    Error getting GitHub data for version {version}: {e}")
+        
+        # Get npm metrics
+        npm_data = self._get_npm_data_cached()
+        
+        if npm_data and 'versions' in npm_data:
+            version = self.normalize_version(version)
+            if version not in npm_data['versions']:
+                #synchronized_print(f"    NPM data for version {version} not found in package data")
+                #synchronized_print(f"    Available versions: {list(npm_data['versions'].keys())}")
+                version = self.extract_version(version)
+                if version not in npm_data['versions']:
+                    print(f"    NPM data for extracted version {version} still not found, skipping NPM metrics")
+                    return metrics
+
+            version_data = npm_data['versions'][version]
+            # Get maintainers/owners
+            maintainers = version_data.get('maintainers', [])
+            metrics['npm_maintainers'] = len(maintainers)
+            metrics['npm_hash_commit'] = version_data.get('gitHead', "")
+            if 'time' in npm_data and version in npm_data['time']:
+                metrics['npm_release_date'] = self._parse_date(npm_data['time'][version])
+            #metrics['npm_maintainers_nicks'] = [maintainer.get('name', '') for maintainer in maintainers if maintainer.get('name')]
+            #metrics['npm_maintainers_emails'] = [maintainer.get('email', '') for maintainer in maintainers if maintainer.get('email')] 
+            # Get publisher info
+            #npm_user = version_data.get('_npmUser', {})
+            #metrics['npm_maintainer_published_release'] = npm_user.get('name', '') if npm_user else ''
+            
         return metrics
-    
-    def _normalize_tag(self, repo: Repo, version: str) -> Optional[str]:
-        """Normalize tag name and check if it exists in the repository"""
-        tag_name = version
-        if f"v{version}" in repo.tags:
-            tag_name = f"v{version}"
-        elif version not in repo.tags:
-            return None
-        return tag_name
-    
+
     def _parse_date(self, date_str: str) -> datetime:
         if not date_str:
             return AccountAnalyzer.UTC_MIN_DATETIME
@@ -122,3 +118,23 @@ class AccountAnalyzer:
         except Exception as e:
             print(f"Error parsing date {date_str}: {e}")
             return AccountAnalyzer.UTC_MIN_DATETIME
+    
+    def normalize_version(self, version: str) -> str:
+        """Normalize version string"""
+        version = version.strip('v')  # Normalize version by removing leading 'v'
+        version = version.replace(self.package_name, '') # Remove package name if present
+        version = version.strip('@')  # Remove leading '@' if present
+        '''
+        if self.package_name in version:
+            version = version.split(self.package_name)[-1]
+        '''
+        return version
+    
+    def extract_version(self, version: str) -> str:
+        """Extract numeric version string"""
+        #synchronized_print(f"    Trying to extract numeric version from {version}")
+        match = re.search(r'\d+(\.\d+)*', version)
+        if match:
+            #synchronized_print(f"    Extracted version for NPM data: {match.group(0)}")
+            return match.group(0)
+        return version

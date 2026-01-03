@@ -16,7 +16,9 @@ class AggregateMetricsByTag:
 
         version_metrics = VersionMetrics()
         version_metrics.package = metrics_list[0].package
-        version_metrics.version = metrics_list[0].version
+        #version_metrics.version = str(metrics_list[0].version) # Ensure it's a string, not a git.refs.tag.TagReference
+        version_metrics.version = metrics_list[0].version # Ensure it's a string, not a git.refs.tag.TagReference
+
 
         # Calculate metrics for account categories
         account = AccountAnalyzer(pkg_name=version_metrics.package)

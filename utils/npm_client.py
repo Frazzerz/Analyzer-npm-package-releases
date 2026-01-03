@@ -5,6 +5,7 @@ import requests
 import subprocess
 import os
 from .logging_utils import synchronized_print
+from models import VersionEntry
 
 class NPMClient:
     """Cloning Git repos associated with a pkg and retrieving ordered tags"""
@@ -126,4 +127,70 @@ class NPMClient:
                     shutil.rmtree(repo_path)
                 except:
                     pass    
+            return None
+    
+        
+    def download_package_versions_tarball(self, download_dir: Path = Path("tarballs")) -> list[VersionEntry]:
+        """Download the tarball for 50 lastest versions of the package from NPM registry"""
+        data = self.get_npm_package_data()
+        if not data or 'versions' not in data:
+            print(f"No version data found for {self.pkg_name}")
+            return None
+
+        versions = list(data['versions'].keys())[-25:] # Get the last 25 versions
+
+        pkg_dir = download_dir / self.pkg_name.replace('/', '_')
+        pkg_dir.mkdir(parents=True, exist_ok=True)
+
+        for version in versions:
+            version_data = data['versions'][version]
+            tarball_url = version_data.get('dist', {}).get('tarball', '')
+            if not tarball_url:
+                synchronized_print(f"No tarball URL for version {version} of {self.pkg_name}")
+                continue
+
+            tarball_path = pkg_dir / f"{version}.tgz"
+            if tarball_path.exists():
+                synchronized_print(f"Tarball already downloaded for {self.pkg_name} version {version}")
+                continue
+            
+            try:
+                synchronized_print(f"Downloading tarball for {self.pkg_name} version {version}...")
+                response = requests.get(tarball_url, timeout=10)
+                response.raise_for_status()
+                
+                with open(tarball_path, 'wb') as f:
+                    f.write(response.content)
+                
+                synchronized_print(f"Downloaded tarball for {self.pkg_name} version {version}")
+
+            except Exception as e:
+                print(f"Error downloading tarball for {self.pkg_name} version {version}: {e}")
+        
+        extract_dir = download_dir / self.pkg_name.replace('/', '_') / "extracted" 
+        extract_dir.mkdir(parents=True, exist_ok=True)
+        entries = []
+        for version in versions:
+            tarball_path = pkg_dir / f"{version}.tgz"
+            if tarball_path.exists():
+                entries.append(self.extract_tarball(tarball_path, extract_dir))
+        return entries
+
+    def extract_tarball(self, tarball_path: Path, extract_dir: Path) -> VersionEntry:
+        """Extracts a tarball to a specified directory"""
+        if not tarball_path.exists():
+            print(f"Tarball {tarball_path} does not exist")
+            return None
+        
+        extract_path = extract_dir / tarball_path.stem
+        extract_path.mkdir(parents=True, exist_ok=True)
+
+        try:
+            import tarfile
+            with tarfile.open(tarball_path, 'r:gz') as tar:
+                tar.extractall(path=extract_path)
+            #synchronized_print(f"Extracted {tarball_path} to {extract_path}")
+            return VersionEntry(name=tarball_path.stem, source="tarball", ref=extract_path)
+        except Exception as e:
+            print(f"Error extracting {tarball_path}: {e}")
             return None

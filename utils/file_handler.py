@@ -25,7 +25,7 @@ class FileHandler:
         exclude_dirs = {'.git', 'node_modules', '.github', '__tests__', 'test', 'tests'}
         exclude_files = {
             'LICENSE', '.npmrc', '.editorconfig', '.gitattributes', 'license',
-            '.eslintrc', '.prettierrc', 'CHANGELOG.md', '.eslintignore', 'yarn.lock', '.gitignore'
+            '.eslintrc', '.prettierrc', 'CHANGELOG.md', '.eslintignore', 'yarn.lock', '.gitignore', '.prettierignore'
         }
         exclude_suffixes = ('d.ts', '.d.ts.map', '.png', '.jpg', '.jpeg', '.ai', '.svg', '.gif', 'ico', '.eot', '.ttf',
                              '.woff', '.woff2', '.mp4', '.mp3', '.mov', '.map')
@@ -60,7 +60,7 @@ class FileHandler:
     @staticmethod
     def delete_previous_analysis() -> None:
         """Delete all results from previous analysis (repos, other_versions/extracted, log file, output directory) #deobfuscated_files"""
-        dirs_to_delete = ['repos', 'other_versions/extracted', 'analysis_results']    # deobfuscated_files
+        dirs_to_delete = ['repos', 'other_versions/extracted', 'analysis_results']    # tarballs , deobfuscated_files
         for dir_name in dirs_to_delete:
             dir_path = Path(dir_name)
             if dir_path.exists() and dir_path.is_dir():
@@ -71,6 +71,14 @@ class FileHandler:
         if log_file.exists() and log_file.is_file():
             log_file.unlink()
             #print(f"Deleted log file: {log_file}")
+    
+    @staticmethod
+    def delete_tarballs(package: str) -> None:
+        """Delete downloaded tarballs for a specific package"""
+        tarball_dir = Path("tarballs") / package.replace('/', '_')
+        if tarball_dir.exists() and tarball_dir.is_dir():
+            shutil.rmtree(tarball_dir)
+            print(f"Deleted tarballs directory: {tarball_dir}")
 
     @staticmethod
     def remove_js_comments_easy(content: str) -> str:

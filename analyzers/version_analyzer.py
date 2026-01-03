@@ -23,7 +23,7 @@ class VersionAnalyzer:
     
     def analyze_versions(self) -> None:
         """Analyze all versions"""
-        if not self.entries or not self.repo:
+        if not self.entries and not self.repo:
             synchronized_print(f"No versions to analyze for {self.package_name} or repository not set")
             return
 
@@ -38,11 +38,11 @@ class VersionAnalyzer:
                 if entry.source == "git":
                     self.repo.git.checkout(entry.ref.name, force=True)
                     repo_path = Path(self.repo.working_tree_dir)
-                if entry.source == "local":
+                if entry.source == "local" or entry.source == "tarball":
                     repo_path = entry.ref / "package"  # entry.ref is the path to the extracted local version
                 
                 # curr_metrics is the list of FileMetrics for all files in the current version
-                # current_metrics ex. [[FileMetrics(package='example', version='1.0.0', file_path='index.js', ...), FileMetrics(...), ...]
+                # current_metrics e.g. [[FileMetrics(package='example', version='1.0.0', file_path='index.js', ...), FileMetrics(...), ...]
                 curr_metrics = self._analyze_version(entry.name, repo_path, entry.source)
                 
                 obfuscated_files = [f for f in curr_metrics if f.code_type == "Obfuscated"]
@@ -62,7 +62,7 @@ class VersionAnalyzer:
                 synchronized_print(f"    Analyzed {len(curr_metrics)} files")
                 
                 # aggregate_metrics_by_tag is the aggregation of all metrics from the all files in the current version
-                # aggregate_metrics_by_tag ex. VersionMetrics(package='example', version='1.0.0', code_types=['Clear', ...], obfuscation_patterns_count=5, ...)
+                # aggregate_metrics_by_tag e.g. VersionMetrics(package='example', version='1.0.0', code_types=['Clear', ...], obfuscation_patterns_count=5, ...)
                 aggregate_metrics_by_tag = AggregateMetricsByTag().aggregate_metrics_by_tag(curr_metrics, repo_path, entry.source)
 
                 flags = self.comparator.compare_tags(
@@ -76,7 +76,7 @@ class VersionAnalyzer:
 
                 # all_aggregate_metrics_by_tag is all aggregated metrics for all versions analyzed so far (NO last version included)
                 # is updated incrementally each time, using for identifying flags and to plot the evolution of metrics over versions
-                # all_aggregate_metrics_by_tag ex. AggregateVersionMetrics(package='example', version='all up to 1.0.0 (included) + 1.1.0 (included)', code_types=['Clear', ...], obfuscation_patterns_count=15, ...)
+                # all_aggregate_metrics_by_tag e.g. AggregateVersionMetrics(package='example', version='all up to 1.0.0 (included) + 1.1.0 (included)', code_types=['Clear', ...], obfuscation_patterns_count=15, ...)
                 all_aggregate_metrics_by_tag = AggregateMetricsByTag.aggregate_metrics_incremental(all_aggregate_metrics_by_tag, aggregate_metrics_by_tag, count_versions, last_version)
                 
                 # Update for next iteration
@@ -96,20 +96,18 @@ class VersionAnalyzer:
                 CSVReporter().save_metrics_Flags(flags_csv, flags)
 
             except Exception as e:
-                print(f"Error analyzing tag {entry.name}: {e}")
+                synchronized_print(f"Error analyzing tag {entry.name}: {e}")
 
         return
 
     def _analyze_version(self, version: str, package_dir: Path, source: str) -> List[FileMetrics]:
         """Analyze all files of a specific Git version"""
 
-        normalized_version = version[1:] if version.startswith('v') else version  # Remove initial 'v' if present
         files = FileHandler().get_all_files(package_dir)
-        
         if self.max_processes > 1:
-            file_results = self._analyze_files_parallel(files, normalized_version, package_dir, source)
+            file_results = self._analyze_files_parallel(files, version, package_dir, source)
         else:
-            file_results = self._analyze_files_sequential(files, normalized_version, package_dir, source)
+            file_results = self._analyze_files_sequential(files, version, package_dir, source)
         
         # Filter out None results (failed analyses)
         valid_results = [r for r in file_results if r is not None]    

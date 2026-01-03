@@ -49,9 +49,9 @@ class DataExfiltrationAnalyzer:
     ]
 
     DATA_TRANSMISSION_PATTERNS: List[Pattern] = [
-        # ex. client.request(https://server.com/api)
+        # e.g. client.request(https://server.com/api)
         re.compile(r'(\w+)\.(post|get|put|delete|request)\s*\(\s*[\'"]?(https?:\/\/[^\s\'"]+)[\'"]?', re.IGNORECASE),
-        # ex. new WebSocket("wss://example.com")
+        # e.g. new WebSocket("wss://example.com")
         re.compile(r'new\s+WebSocket\s*\(\s*[\'"]?(wss?:\/\/[^\s\'"]+)[\'"]?', re.IGNORECASE),
     ]
 

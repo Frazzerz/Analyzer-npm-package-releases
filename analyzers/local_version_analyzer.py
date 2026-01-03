@@ -31,7 +31,9 @@ class LocalVersionAnalyzer:
                     local_version,
                     self.local_extract_dir
                 )
-                version_with_suffix = f"{local_version['version']}-local"
+                version_with_suffix = f"{local_version['version']}+local"
+                #version_with_suffix = f"v{local_version['version']}-local"
+                #version_with_suffix = f"posthog-node@{local_version['version']}-local"
                 self._local_versions[version_with_suffix] = extracted_path
                 synchronized_print(f"Added local version {version_with_suffix}")
             except Exception as e:
@@ -109,17 +111,8 @@ class LocalVersionAnalyzer:
         
         return extract_path
     
-    def unite_versions(self, entries) -> List[VersionEntry]:
+    def unite_versions(self, entries: List[VersionEntry]) -> List[VersionEntry]:
         """Combines Git and local versions into a single sorted list of VersionEntry"""
-
         for v_name, path in self._local_versions.items():
-            clean_version = v_name.replace("-local", "")
-            entries.append(
-                VersionEntry(
-                    version=Version(clean_version),
-                    name=v_name,
-                    source="local",
-                    ref=path
-                )
-            )
-        return sorted(entries, key=lambda e: e.version)
+            entries.append(VersionEntry(name=v_name,source="local",ref=path))
+        return sorted(entries, key=lambda e: Version(str(e.name)))

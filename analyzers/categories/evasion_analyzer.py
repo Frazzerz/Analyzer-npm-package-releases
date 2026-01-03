@@ -8,11 +8,11 @@ class EvasionAnalyzer:
     """Analyze evasion techniques"""
 
     OBFUSCATION_PATTERNS: List[Pattern] = [
-        re.compile(r'_?0x[0-9a-fA-F]{6,}'),                                                   # Hexadecimal values and variables (at least 6 hex values), ex. 0x58e7a2 or _0x5f3b1c
-        re.compile(r'parseInt\(_?0x[0-9a-fA-F]{6,}', re.IGNORECASE),                          # ParseInt with hexadecimals, ex. parseInt(0x58e7a2
-        re.compile(r'try\{.*?\}catch\(_?0x[0-9a-fA-F]{6,}\)', re.IGNORECASE),                 # Try-catch blocks with obfuscated vars, ex. try{...}catch(_0x5f3b1c)
-        re.compile(r'const\s+_?0x[0-9a-fA-F]{6,}\s*=\s*_?0x[0-9a-fA-F]{6,}', re.IGNORECASE),  # Constant assignments with obfuscated names, ex. const _0x5f3b1c = _0x5f3b1d 
-        re.compile(r'_?0x[0-9a-fA-F]{6,}\(_?0x[0-9a-fA-F]{6,}'),                              # Function calls with hex parameters, ex. _0x5f3b1c(0x58e7a2
+        re.compile(r'_?0x[0-9a-fA-F]{6,}'),                                                   # Hexadecimal values and variables (at least 6 hex values), e.g. 0x58e7a2 or _0x5f3b1c
+        re.compile(r'parseInt\(_?0x[0-9a-fA-F]{6,}', re.IGNORECASE),                          # ParseInt with hexadecimals, e.g. parseInt(0x58e7a2
+        re.compile(r'try\{.*?\}catch\(_?0x[0-9a-fA-F]{6,}\)', re.IGNORECASE),                 # Try-catch blocks with obfuscated vars, e.g. try{...}catch(_0x5f3b1c)
+        re.compile(r'const\s+_?0x[0-9a-fA-F]{6,}\s*=\s*_?0x[0-9a-fA-F]{6,}', re.IGNORECASE),  # Constant assignments with obfuscated names, e.g. const _0x5f3b1c = _0x5f3b1d 
+        re.compile(r'_?0x[0-9a-fA-F]{6,}\(_?0x[0-9a-fA-F]{6,}'),                              # Function calls with hex parameters, e.g. _0x5f3b1c(0x58e7a2
         # 3281-12-8-38-17
         # \s for spaces
         # + at least one

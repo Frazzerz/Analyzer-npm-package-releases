@@ -1,5 +1,6 @@
 import subprocess
 import os
+from utils import synchronized_print
 
 class Deobfuscator:
 
@@ -7,7 +8,7 @@ class Deobfuscator:
     def deobfuscate(content: str, package_name: str, version: str, file_name: str) -> None:
         """Deobfuscates a JavaScript file using the obfuscator-io-deobfuscator tool"""
 
-        print(f"Find deobfuscated js file! For package {package_name} version {version}, file {file_name}. Starting try to deobfuscate...")
+        synchronized_print(f"Find deobfuscated js file! For package {package_name} version {version}, file {file_name}. Starting try to deobfuscate...")
         base_name = os.path.splitext(file_name)[0]
 
         # Build directory path: "deobfuscated_files/{package_name}/{version}/"
@@ -15,7 +16,7 @@ class Deobfuscator:
         output_file = os.path.join(dir_path, f"{base_name}-deobfuscated.js")
 
         if os.path.exists(output_file):
-            print(f"Deobfuscated file already exists: {output_file}. Skipping deobfuscation...")
+            synchronized_print(f"Deobfuscated file already exists: {output_file}. Skipping deobfuscation...")
             return        
         os.makedirs(dir_path, exist_ok=True)
         
@@ -27,11 +28,11 @@ class Deobfuscator:
         try:
             result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=120)    
             if result.returncode == 0:
-                print(f"Success! Deobfuscated file saved to: {output_file}")
+                synchronized_print(f"Success! Deobfuscated file saved to: {output_file}")
                 
         except Exception as e:
             error_msg = str(e).lower()
             if 'timed out' in error_msg:
-                print(f"Deobfuscation process timed out for file: {file_name}")
+                synchronized_print(f"Deobfuscation process timed out for file: {file_name}")
             else:
-                print(f"An error occurred during deobfuscation of file {file_name}: {e}")
+                synchronized_print(f"An error occurred during deobfuscation of file {file_name}: {e}")
