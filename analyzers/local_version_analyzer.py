@@ -32,7 +32,9 @@ class LocalVersionAnalyzer:
                     local_version,
                     self.local_extract_dir
                 )
-                version_with_suffix = f"{local_version['version']}+local"
+                version_with_suffix = f"{local_version['version']}-local"
+                # test
+                #version_with_suffix = f"{local_version['version']}+local"
                 #version_with_suffix = f"v{local_version['version']}-local"
                 #version_with_suffix = f"posthog-node@{local_version['version']}-local"
                 self._local_versions[version_with_suffix] = extracted_path
@@ -111,9 +113,53 @@ class LocalVersionAnalyzer:
             tar.extractall(path=extract_path)
         
         return extract_path
+
+    def extract_numeric_version(self, version_str: str) -> str:
+        """Extract numeric part of version string (e.g., '1.2.3' from 'v1.2.3-candidate')"""
+        # Pattern to match version numbers like 1, 1.2, 1.2.3, etc.
+        match = re.search(r'(\d+(?:\.\d+)*)', version_str)
+        return match.group(1) if match else "0"
     
+    def compare_versions(self, v1: str, v2: str) -> int:
+        """Compare two version strings. Returns -1 if v1 < v2, 0 if equal, 1 if v1 > v2"""
+        v1_num = self.extract_numeric_version(v1)
+        v2_num = self.extract_numeric_version(v2)
+        
+        v1_parts = list(map(int, v1_num.split('.')))
+        v2_parts = list(map(int, v2_num.split('.')))
+        
+        # Compare each numeric part
+        for i in range(max(len(v1_parts), len(v2_parts))):
+            v1_val = v1_parts[i] if i < len(v1_parts) else 0
+            v2_val = v2_parts[i] if i < len(v2_parts) else 0
+            
+            if v1_val < v2_val:
+                return -1
+            elif v1_val > v2_val:
+                return 1
+        
+        # If numeric parts are equal, compare the full strings
+        # This handles cases like "1.0.0" vs "1.0.0-candidate"
+        return -1 if v1 < v2 else (1 if v1 > v2 else 0)
+
     def unite_versions(self, entries: List[VersionEntry]) -> List[VersionEntry]:
         """Combines Git and local versions into a single sorted list of VersionEntry"""
-        for v_name, path in self._local_versions.items():
-            entries.append(VersionEntry(name=v_name,source="local",ref=path))
-        return sorted(entries, key=lambda e: Version(str(e.name)))
+        if self._local_versions:
+            for l_name, l_path in self._local_versions.items():
+                inserted = False
+                for i, entry in enumerate(entries):
+                    # If the version in the entry is newer than the local version
+                    if self.compare_versions(entry.name, l_name) > 0:
+                        entries.insert(i, VersionEntry(name=l_name, source="local", ref=l_path))
+                        inserted = True
+                        break
+                
+                # It is the most recent version, I add it at the end
+                if not inserted:
+                    entries.append(VersionEntry(name=l_name, source="local", ref=l_path))
+
+        return entries
+        # I can't use packaging.version here because some versions have a suffix that makes them invalid e.g. 2.1.0-candidate
+        #return sorted(entries, key=lambda e: Version(str(e.name)))
+        #return sorted(entries, key=lambda e: str(e.name)) # Sort by name as string
+    

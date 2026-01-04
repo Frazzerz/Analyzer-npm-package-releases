@@ -78,7 +78,7 @@ class FileHandler:
         tarball_dir = Path("tarballs") / package.replace('/', '_')
         if tarball_dir.exists() and tarball_dir.is_dir():
             shutil.rmtree(tarball_dir)
-            print(f"Deleted tarballs directory: {tarball_dir}")
+            #print(f"Deleted tarballs directory: {tarball_dir}")
 
     @staticmethod
     def remove_js_comments_easy(content: str) -> str:

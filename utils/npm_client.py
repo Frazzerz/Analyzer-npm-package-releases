@@ -136,12 +136,13 @@ class NPMClient:
         if not data or 'versions' not in data:
             print(f"No version data found for {self.pkg_name}")
             return None
-
+        
+        synchronized_print(f"Found {len(data['versions'])} versions for {self.pkg_name}, but i consider only the last 50")
         versions = list(data['versions'].keys())[-50:] # Get the last 50 versions
 
         pkg_dir = download_dir / self.pkg_name.replace('/', '_')
         pkg_dir.mkdir(parents=True, exist_ok=True)
-        synchronized_print(f"Downloading tarballs for {self.pkg_name} {len(versions)} versions...", target=OutputTarget.TERMINAL_ONLY)
+        synchronized_print(f"Downloading tarballs for {self.pkg_name} {len(versions)} versions...")
 
         for version in versions:
             version_data = data['versions'][version]
@@ -168,7 +169,7 @@ class NPMClient:
             except Exception as e:
                 synchronized_print(f"Error downloading tarball for {self.pkg_name} version {version}: {e}", target=OutputTarget.FILE_ONLY)
 
-        synchronized_print(f"Finished downloading tarballs for {self.pkg_name}", target=OutputTarget.TERMINAL_ONLY)        
+        synchronized_print(f"Finished downloading tarballs for {self.pkg_name}")        
         extract_dir = download_dir / self.pkg_name.replace('/', '_') / "extracted" 
         extract_dir.mkdir(parents=True, exist_ok=True)
         entries = []
