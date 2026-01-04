@@ -63,6 +63,7 @@ class PayloadAnalyzer:
         if(package_info['file_name'] == 'package.json'):
             _, preinstall_scripts = UtilsForAnalyzer.detect_patterns(content, self.PREINSTALL_PATTERNS)
             #Take only the first occurrence, there should be only one preinstall script in package.json
-            metrics['preinstall_scripts'] = [preinstall_scripts[0]]
+            if preinstall_scripts:
+                metrics['preinstall_scripts'] = [preinstall_scripts[0]]
 
         return metrics

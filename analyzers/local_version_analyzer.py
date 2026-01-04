@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List, Dict, Optional
 from models import VersionEntry
 from packaging.version import Version
+from utils.logging_utils import OutputTarget
 
 class LocalVersionAnalyzer:
     """Manages loading and extracting local versions"""
@@ -22,7 +23,7 @@ class LocalVersionAnalyzer:
             synchronized_print(f"No local versions found for {self.pkg_name}")
             return
 
-        synchronized_print(f"Found {len(local_versions)} local versions for {self.pkg_name}")
+        synchronized_print(f"Found {len(local_versions)} local versions for {self.pkg_name}", target=OutputTarget.FILE_ONLY)
         self.local_extract_dir.mkdir(parents=True, exist_ok=True)
 
         for local_version in local_versions:

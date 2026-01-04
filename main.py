@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 from utils import TeeOutput, FileHandler
-from worker import analyze_single_package
+from analyze_single_package import analyze_single_package
 import time
 
 def main():

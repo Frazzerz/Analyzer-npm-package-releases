@@ -82,4 +82,4 @@ class GraphReporter:
                 plt.savefig(output_path)
                 plt.close()
         
-        print(f"Generated graphs for {package_name} in {graphs_dir}")
+        #print(f"Generated graphs for {package_name} in {graphs_dir}")

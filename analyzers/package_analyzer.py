@@ -1,5 +1,6 @@
 from pathlib import Path
 from utils import NPMClient
+from utils.logging_utils import OutputTarget
 from .version_analyzer import VersionAnalyzer
 from git import Repo
 from utils import synchronized_print
@@ -35,10 +36,10 @@ class PackageAnalyzer:
         '''
         entries = self.npm_client.download_package_versions_tarball()
         if not entries:
-            print(f"Unable to analyze {self.pkg_name} - No versions available")
+            synchronized_print(f"Unable to analyze {self.pkg_name} - No versions available")
             return
         if self.include_local:
-            synchronized_print(f"Including local versions in tarball analysis for {self.pkg_name}")
+            #synchronized_print(f"Including local versions in tarball analysis for {self.pkg_name}", target=OutputTarget.TERMINAL_ONLY)
             localversionanalyzer = LocalVersionAnalyzer(local_versions_dir=self.local_versions_dir, pkg_name=self.pkg_name)
             localversionanalyzer.setup_local_versions()
             entries = localversionanalyzer.unite_versions(entries)

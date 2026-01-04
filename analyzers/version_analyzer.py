@@ -2,11 +2,11 @@ from pathlib import Path
 from typing import List
 import multiprocessing as mp
 from models import FileMetrics, VersionMetrics, AggregateVersionMetrics
-from reporters.csv_reporter import CSVReporter
-from utils import FileHandler, synchronized_print
+from reporters import CSVReporter
+from utils import FileHandler, synchronized_print, OutputTarget
 from .aggregate_metrics_by_tag import AggregateMetricsByTag
 from .code_analyzer import CodeAnalyzer
-from comparators.version_comparator import VersionComparator
+from comparators import VersionComparator
 
 class VersionAnalyzer:
     """Handles analysis of versions from a Git repository and local versions"""
@@ -90,10 +90,10 @@ class VersionAnalyzer:
                 aggregate_metrics_csv = self.output_dir / "aggregate_metrics_by_tag.csv"
                 aggregate_metrics_history_csv = self.output_dir / "aggregate_metrics_history.csv"
 
-                CSVReporter().save_metrics_list(all_metrics_csv, curr_metrics)
-                CSVReporter().save_metrics_VersionMetrics(aggregate_metrics_csv, aggregate_metrics_by_tag)
-                CSVReporter().save_metrics_AllVersionMetrics(aggregate_metrics_history_csv, all_aggregate_metrics_by_tag)
-                CSVReporter().save_metrics_Flags(flags_csv, flags)
+                CSVReporter().save_csv(all_metrics_csv, curr_metrics)
+                CSVReporter().save_csv(aggregate_metrics_csv, aggregate_metrics_by_tag)
+                CSVReporter().save_csv(aggregate_metrics_history_csv, all_aggregate_metrics_by_tag)
+                CSVReporter().save_csv(flags_csv, flags)
 
             except Exception as e:
                 synchronized_print(f"Error analyzing tag {entry.name}: {e}")
@@ -143,7 +143,8 @@ class VersionAnalyzer:
         try:
             return self._analyze_single_file(file_path, version, package_dir, source)
         except Exception as e:
-            print(f"Error analyzing {file_path}: {e}")
+            rel_path = file_path.relative_to(package_dir) if package_dir in file_path.parents else file_path
+            print(f"Error analyzing {rel_path}: {type(e).__name__}: {e}")
             return None
 
     def _analyze_single_file(self, file_path: Path, version: str, package_dir: Path, source: str) -> FileMetrics:

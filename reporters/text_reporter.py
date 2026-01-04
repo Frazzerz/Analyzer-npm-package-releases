@@ -11,7 +11,7 @@ class TextReporter:
         captured_output = output_buffer.getvalue()
 
         with open(pkg_output_file, 'w', encoding='utf-8') as f:
-            f.write(f"=== Analysis of {package} ===\n\n")
+            f.write(f"=== Analysis of {package} ===\n")
             f.write(captured_output)
     
     @staticmethod

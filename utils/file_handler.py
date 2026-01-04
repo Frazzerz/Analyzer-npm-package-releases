@@ -22,26 +22,24 @@ class FileHandler:
         """Find all files in directory (recursive) excluding certain directories, files and extensions."""
         # Excluded: Also auto-generated file (like yarn.lock)
         # not excluded: README.md, package.json, all .js .mjs .ts .cjs .js.map files
-        exclude_dirs = {'.git', 'node_modules', '.github', '__tests__', 'test', 'tests'}
-        exclude_files = {
-            'LICENSE', '.npmrc', '.editorconfig', '.gitattributes', 'license',
-            '.eslintrc', '.prettierrc', 'CHANGELOG.md', '.eslintignore', 'yarn.lock', '.gitignore', '.prettierignore'
-        }
-        exclude_suffixes = ('d.ts', '.d.ts.map', '.png', '.jpg', '.jpeg', '.ai', '.svg', '.gif', 'ico', '.eot', '.ttf',
-                             '.woff', '.woff2', '.mp4', '.mp3', '.mov', '.map')
+        #exclude_dirs = {'.git', 'node_modules', '.github', '__tests__', 'test', 'tests'}
+        #exclude_files = {
+        #    'LICENSE', '.npmrc', '.editorconfig', '.gitattributes', 'license',
+        #    '.eslintrc', '.prettierrc', 'CHANGELOG.md', '.eslintignore', 'yarn.lock', '.gitignore', '.prettierignore'
+        #}
+        #exclude_suffixes = ('d.ts', '.d.ts.map', '.png', '.jpg', '.jpeg', '.ai', '.svg', '.gif', 'ico', '.eot', '.ttf',
+        #                     '.woff', '.woff2', '.mp4', '.mp3', '.mov', '.map')
         files: List[Path] = []
         directory_str = str(directory)
         for root, dirs, filenames in os.walk(directory_str):
             # dirs contains names (not full paths)
-            dirs[:] = [d for d in dirs if d not in exclude_dirs]
+            #dirs[:] = [d for d in dirs if d not in exclude_dirs]
             for name in filenames:
-                if name in exclude_files:
-                    continue
-                if name.endswith(exclude_suffixes):
-                    continue
-
+                #if name in exclude_files:
+                #    continue
+                #if name.endswith(exclude_suffixes):
+                #    continue
                 files.append(Path(root) / name)
-
         return files
     
     @staticmethod
@@ -50,7 +48,9 @@ class FileHandler:
         try:
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                 content = f.read()
-                content = FileHandler.remove_js_comments_easy(content)
+                js_extensions = {'.js', '.mjs', '.cjs', '.ts', '.jsx', '.tsx'}
+                if file_path.suffix.lower() in js_extensions:
+                    content = FileHandler.remove_js_comments_easy(content)    
                 return content
             
         except Exception as e:

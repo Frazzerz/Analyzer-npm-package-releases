@@ -4,7 +4,7 @@ from git import Repo
 import requests
 import subprocess
 import os
-from .logging_utils import synchronized_print
+from .logging_utils import OutputTarget, synchronized_print
 from models import VersionEntry
 
 class NPMClient:
@@ -137,36 +137,38 @@ class NPMClient:
             print(f"No version data found for {self.pkg_name}")
             return None
 
-        versions = list(data['versions'].keys())[-25:] # Get the last 25 versions
+        versions = list(data['versions'].keys())[-50:] # Get the last 50 versions
 
         pkg_dir = download_dir / self.pkg_name.replace('/', '_')
         pkg_dir.mkdir(parents=True, exist_ok=True)
+        synchronized_print(f"Downloading tarballs for {self.pkg_name} {len(versions)} versions...", target=OutputTarget.TERMINAL_ONLY)
 
         for version in versions:
             version_data = data['versions'][version]
             tarball_url = version_data.get('dist', {}).get('tarball', '')
             if not tarball_url:
-                synchronized_print(f"No tarball URL for version {version} of {self.pkg_name}")
+                synchronized_print(f"No tarball URL for version {version} of {self.pkg_name}", target=OutputTarget.FILE_ONLY)
                 continue
 
             tarball_path = pkg_dir / f"{version}.tgz"
             if tarball_path.exists():
-                synchronized_print(f"Tarball already downloaded for {self.pkg_name} version {version}")
+                synchronized_print(f"Tarball already downloaded for {self.pkg_name} version {version}", target=OutputTarget.FILE_ONLY)
                 continue
             
             try:
-                synchronized_print(f"Downloading tarball for {self.pkg_name} version {version}...")
+                #synchronized_print(f"Downloading tarball for {self.pkg_name} version {version}...")
                 response = requests.get(tarball_url, timeout=10)
                 response.raise_for_status()
                 
                 with open(tarball_path, 'wb') as f:
                     f.write(response.content)
                 
-                synchronized_print(f"Downloaded tarball for {self.pkg_name} version {version}")
+                synchronized_print(f"Downloaded tarball for {self.pkg_name} version {version}", target=OutputTarget.FILE_ONLY)
 
             except Exception as e:
-                print(f"Error downloading tarball for {self.pkg_name} version {version}: {e}")
-        
+                synchronized_print(f"Error downloading tarball for {self.pkg_name} version {version}: {e}", target=OutputTarget.FILE_ONLY)
+
+        synchronized_print(f"Finished downloading tarballs for {self.pkg_name}", target=OutputTarget.TERMINAL_ONLY)        
         extract_dir = download_dir / self.pkg_name.replace('/', '_') / "extracted" 
         extract_dir.mkdir(parents=True, exist_ok=True)
         entries = []
@@ -174,6 +176,7 @@ class NPMClient:
             tarball_path = pkg_dir / f"{version}.tgz"
             if tarball_path.exists():
                 entries.append(self.extract_tarball(tarball_path, extract_dir))
+        synchronized_print(f"Extracted tarballs for {self.pkg_name}", target=OutputTarget.FILE_ONLY)
         return entries
 
     def extract_tarball(self, tarball_path: Path, extract_dir: Path) -> VersionEntry:
