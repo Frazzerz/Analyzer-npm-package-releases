@@ -3,7 +3,8 @@ from typing import List
 import multiprocessing as mp
 from models import FileMetrics, VersionMetrics, AggregateVersionMetrics
 from reporters import CSVReporter
-from utils import FileHandler, synchronized_print, OutputTarget
+from utils import FileHandler, synchronized_print, Deobfuscator
+from utils.logging_utils import OutputTarget
 from .aggregate_metrics_by_tag import AggregateMetricsByTag
 from .code_analyzer import CodeAnalyzer
 from comparators import VersionComparator
@@ -45,10 +46,20 @@ class VersionAnalyzer:
                 # current_metrics e.g. [[FileMetrics(package='example', version='1.0.0', file_path='index.js', ...), FileMetrics(...), ...]
                 curr_metrics = self._analyze_version(entry.name, repo_path, entry.source)
                 
-                obfuscated_files = [f for f in curr_metrics if f.code_type == "Obfuscated"]
+                # Identify obfuscated JS files and attempt deobfuscation
+                obfuscated_files = [f for f in curr_metrics if f.code_type == "Obfuscated" and f.file_path.endswith('.js')]
                 if obfuscated_files:
-                    synchronized_print(f"    Found {len(obfuscated_files)} obfuscated files in version {entry.name}")
+                    synchronized_print(f"    Found {len(obfuscated_files)} obfuscated js files, trying to deobfuscate it...")
                     for f in obfuscated_files:
+                        succ = Deobfuscator.deobfuscate(
+                            content=FileHandler().read_file(repo_path / f.file_path),
+                            package_name=self.package_name,
+                            version=entry.name,
+                            file_name=f.file_path
+                        )
+                        if not succ:
+                            synchronized_print(f"    Deobfuscation failed for file: {f.file_path} in version {entry.name}, skipping analysis of this deobfuscated file.", target=OutputTarget.FILE_ONLY)
+                            continue
                         path_dir = Path('deobfuscated_files') / self.package_name / entry.name
                         path_file = path_dir / f.file_path.replace('.js', '-deobfuscated.js')
                         deob = self._analyze_single_file(

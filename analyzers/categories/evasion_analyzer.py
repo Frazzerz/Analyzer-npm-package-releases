@@ -1,8 +1,7 @@
 import re
 from typing import Dict, List, Pattern
-from utils import Deobfuscator, UtilsForAnalyzer
+from utils import UtilsForAnalyzer
 import jsbeautifier
-from utils import synchronized_print
 
 class EvasionAnalyzer:
     """Analyze evasion techniques"""
@@ -66,10 +65,7 @@ class EvasionAnalyzer:
             code_type = 'Obfuscated'
         else:
             code_type = 'Clear'
-        metrics['code_type'] = code_type        
-
-        if code_type == 'Obfuscated' and package_info['file_name'].endswith('.js'):                              # Only deobfuscate JS files
-            self.deobfuscate_code(content, package_info['name'], package_info['version'], package_info['file_name'])
+        metrics['code_type'] = code_type
         return metrics
     
     @staticmethod
@@ -85,11 +81,6 @@ class EvasionAnalyzer:
         #return blank_space_and_character_ratio < 0.03 and no_empty_lines < 3 and longest_line_length > 100        # Thresholds for minification detection
         return file_name.endswith('.min.js')
 
-    def deobfuscate_code(self, content: str, package_name: str, version: str, file_name: str):
-        """Attempt to deobfuscate code"""
-        Deobfuscator.deobfuscate(content, package_name, version, file_name)
-
     def unminify_code(self, content: str) -> str:
         """Attempt to unminify code"""
-        print("Unminifying code...")
         return jsbeautifier.beautify(content)
