@@ -1,13 +1,14 @@
 from pathlib import Path
 from typing import List
 import multiprocessing as mp
-from models import FileMetrics, VersionMetrics, AggregateVersionMetrics
+from models.composed_metrics import FileMetrics, VersionMetrics, AggregateVersionMetrics
 from reporters import CSVReporter
 from utils import FileHandler, synchronized_print, Deobfuscator
 from utils.logging_utils import OutputTarget
 from .aggregate_metrics_by_tag import AggregateMetricsByTag
 from .code_analyzer import CodeAnalyzer
 from comparators import VersionComparator
+from models import CodeType
 
 class VersionAnalyzer:
     """Handles analysis of versions from a Git repository and local versions"""
@@ -47,7 +48,7 @@ class VersionAnalyzer:
                 curr_metrics = self._analyze_version(entry.name, repo_path, entry.source)
                 
                 # Identify obfuscated JS files and attempt deobfuscation
-                obfuscated_files = [f for f in curr_metrics if f.code_type == "Obfuscated" and f.file_path.endswith('.js')]
+                obfuscated_files = [f for f in curr_metrics if f.evasion.code_type == CodeType.OBFUSCATED and f.file_path.endswith('.js')]
                 if obfuscated_files:
                     synchronized_print(f"    Found {len(obfuscated_files)} obfuscated js files, trying to deobfuscate it...")
                     for f in obfuscated_files:
@@ -81,14 +82,16 @@ class VersionAnalyzer:
                     prev_tag_metrics=previous_aggregate_metrics,
                     curr_tag_metrics=aggregate_metrics_by_tag,
                     package=self.package_name,
-                    version_from=last_version,
-                    version_to=aggregate_metrics_by_tag.version
+                    version=entry.name
+                    #version_from=last_version,
+                    #version_to=aggregate_metrics_by_tag.version
                 )
 
                 # all_aggregate_metrics_by_tag is all aggregated metrics for all versions analyzed so far (NO last version included)
                 # is updated incrementally each time, using for identifying flags and to plot the evolution of metrics over versions
                 # all_aggregate_metrics_by_tag e.g. AggregateVersionMetrics(package='example', version='all up to 1.0.0 (included) + 1.1.0 (included)', code_types=['Clear', ...], obfuscation_patterns_count=15, ...)
-                all_aggregate_metrics_by_tag = AggregateMetricsByTag.aggregate_metrics_incremental(all_aggregate_metrics_by_tag, aggregate_metrics_by_tag, count_versions, last_version)
+                all_aggregate_metrics_by_tag = AggregateMetricsByTag.aggregate_metrics_incremental(
+                    all_aggregate_metrics_by_tag, aggregate_metrics_by_tag, count_versions, last_version)
                 
                 # Update for next iteration
                 count_versions += 1
@@ -172,6 +175,7 @@ class VersionAnalyzer:
         }
 
         file_metrics = self.code_analyzer.analyze_file(content, package_info)
+        '''
         metrics = FileMetrics(
             package=self.package_name,
             version=version,
@@ -179,3 +183,5 @@ class VersionAnalyzer:
             **file_metrics
         )
         return metrics
+        '''
+        return file_metrics

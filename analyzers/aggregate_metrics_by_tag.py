@@ -1,5 +1,5 @@
 from zipfile import Path
-from models import FileMetrics, VersionMetrics, AggregateVersionMetrics
+from models.composed_metrics import FileMetrics, VersionMetrics, AggregateVersionMetrics
 from typing import List
 from analyzers.categories import AccountAnalyzer
 from utils import synchronized_print
@@ -23,52 +23,52 @@ class AggregateMetricsByTag:
         # Calculate metrics for account categories
         account = AccountAnalyzer(pkg_name=version_metrics.package)
         account_metrics = account.analyze(version_metrics.version, repo_path, source)
-        version_metrics.npm_maintainers = account_metrics.get('npm_maintainers')
-        version_metrics.npm_hash_commit = account_metrics.get('npm_hash_commit')
-        version_metrics.github_hash_commit = account_metrics.get('github_hash_commit')
-        version_metrics.npm_release_date = account_metrics.get('npm_release_date')
+        version_metrics.account.npm_maintainers = account_metrics.get('npm_maintainers')
+        version_metrics.account.npm_hash_commit = account_metrics.get('npm_hash_commit')
+        #version_metrics.account.github_hash_commit = account_metrics.get('github_hash_commit')
+        version_metrics.account.npm_release_date = account_metrics.get('npm_release_date')
     
         # Calculate total file sizes for weighted averages
         for fm in metrics_list:
                 # Filter for deobfuscated files, I don't consider the deobfuscated files for these metrics below
-                if fm.code_type != "Deobfuscated":
-                    version_metrics.total_size_chars += fm.file_size_chars
-                    version_metrics.code_types.append(fm.code_type)
-                    version_metrics.total_files += 1
-                    version_metrics.total_size_bytes += fm.file_size_bytes
-                    version_metrics.longest_line_length = max(version_metrics.longest_line_length, fm.longest_line_length)
+                if fm.evasion.code_type != "Deobfuscated":
+                    version_metrics.generic.total_size_chars += fm.generic.size_chars
+                    version_metrics.evasion.code_types.append(fm.evasion.code_type)
+                    version_metrics.generic.total_files += 1
+                    version_metrics.generic.total_size_bytes += fm.generic.size_bytes
+                    version_metrics.generic.longest_line_length = max(version_metrics.generic.longest_line_length, fm.generic.longest_line_length)
 
         for fm in metrics_list:
-            version_metrics.obfuscation_patterns_count += fm.obfuscation_patterns_count
-            version_metrics.platform_detections_count += fm.platform_detections_count
+            version_metrics.evasion.obfuscation_patterns_count += fm.evasion.obfuscation_patterns_count
+            version_metrics.evasion.platform_detections_count += fm.evasion.platform_detections_count
+            
+            version_metrics.payload.timing_delays_count += fm.payload.timing_delays_count
+            version_metrics.payload.eval_count += fm.payload.eval_count
+            version_metrics.payload.shell_commands_count += fm.payload.shell_commands_count
+            version_metrics.payload.preinstall_scripts.extend(fm.payload.preinstall_scripts)
 
-            version_metrics.timing_delays_count += fm.timing_delays_count
-            version_metrics.eval_count += fm.eval_count
-            version_metrics.shell_commands_count += fm.shell_commands_count
-            version_metrics.preinstall_scripts.extend(fm.preinstall_scripts)
+            version_metrics.exfiltration.scan_functions_count += fm.exfiltration.scan_functions_count
+            version_metrics.exfiltration.sensitive_elements_count += fm.exfiltration.sensitive_elements_count
+            version_metrics.exfiltration.data_transmission_count += fm.exfiltration.data_transmission_count
 
-            version_metrics.scan_functions_count += fm.scan_functions_count
-            version_metrics.sensitive_elements_count += fm.sensitive_elements_count
-            version_metrics.data_transmission_count += fm.data_transmission_count
-
-            version_metrics.crypto_addresses += fm.crypto_addresses
-            version_metrics.list_crypto_addresses.extend(fm.list_crypto_addresses)
-            version_metrics.cryptocurrency_name += fm.cryptocurrency_name
-            version_metrics.wallet_detection += fm.wallet_detection
-            version_metrics.replaced_crypto_addresses += fm.replaced_crypto_addresses
-            version_metrics.hook_provider += fm.hook_provider
+            version_metrics.crypto.crypto_addresses += fm.crypto.crypto_addresses
+            version_metrics.crypto.list_crypto_addresses.extend(fm.crypto.list_crypto_addresses)
+            version_metrics.crypto.cryptocurrency_name += fm.crypto.cryptocurrency_name
+            version_metrics.crypto.wallet_detection += fm.crypto.wallet_detection
+            version_metrics.crypto.replaced_crypto_addresses += fm.crypto.replaced_crypto_addresses
+            version_metrics.crypto.hook_provider += fm.crypto.hook_provider
             
             # weighted averages
-            if fm.code_type != "Deobfuscated":
+            if fm.evasion.code_type != "Deobfuscated":
                 # To calculate the average blank space ratio for the version, we need to calculate the weighted average based on character size,
                 # so a larger file will have a larger weight on average
-                version_metrics.weighted_avg_blank_space_and_character_ratio += fm.blank_space_and_character_ratio * fm.file_size_chars / version_metrics.total_size_chars if version_metrics.total_size_chars > 0 else 0.0
+                version_metrics.generic.weighted_avg_blank_space_and_character_ratio += fm.generic.blank_space_and_character_ratio * fm.generic.size_chars / version_metrics.generic.total_size_chars if version_metrics.generic.total_size_chars > 0 else 0.0
                 # To calculate the shannon entropy of the version, we need to calculate the weighted average based on character size,
                 # represent the average information content per character in the version
-                version_metrics.weighted_avg_shannon_entropy += fm.shannon_entropy * fm.file_size_chars / version_metrics.total_size_chars if version_metrics.total_size_chars > 0 else 0.0
+                version_metrics.generic.weighted_avg_shannon_entropy += fm.generic.shannon_entropy * fm.generic.size_chars / version_metrics.generic.total_size_chars if version_metrics.generic.total_size_chars > 0 else 0.0
 
         # Remove duplicates in lists (set function)
-        version_metrics.code_types = list(set(version_metrics.code_types))
+        version_metrics.evasion.code_types = list(set(version_metrics.evasion.code_types))
 
         return version_metrics
 
@@ -85,31 +85,31 @@ class AggregateMetricsByTag:
             all_previous_metrics.package = c.package
             all_previous_metrics.versions = c.version
 
-            all_previous_metrics.avg_obfuscation_patterns_count = c.obfuscation_patterns_count
-            all_previous_metrics.avg_platform_detections_count = c.platform_detections_count
+            all_previous_metrics.evasion.avg_obfuscation_patterns_count = c.evasion.obfuscation_patterns_count
+            all_previous_metrics.evasion.avg_platform_detections_count = c.evasion.platform_detections_count
             
-            all_previous_metrics.avg_timing_delays_count = c.timing_delays_count
-            all_previous_metrics.avg_eval_count = c.eval_count
-            all_previous_metrics.avg_shell_commands_count = c.shell_commands_count
+            all_previous_metrics.payload.avg_timing_delays_count = c.payload.timing_delays_count
+            all_previous_metrics.payload.avg_eval_count = c.payload.eval_count
+            all_previous_metrics.payload.avg_shell_commands_count = c.payload.shell_commands_count
             
-            all_previous_metrics.avg_scan_functions_count = c.scan_functions_count
-            all_previous_metrics.avg_sensitive_elements_count = c.sensitive_elements_count
-            all_previous_metrics.avg_data_transmission_count = c.data_transmission_count
+            all_previous_metrics.exfiltration.avg_scan_functions_count = c.exfiltration.scan_functions_count
+            all_previous_metrics.exfiltration.avg_sensitive_elements_count = c.exfiltration.sensitive_elements_count
+            all_previous_metrics.exfiltration.avg_data_transmission_count = c.exfiltration.data_transmission_count
             
-            all_previous_metrics.avg_crypto_addresses = c.crypto_addresses
-            all_previous_metrics.avg_cryptocurrency_name = c.cryptocurrency_name
-            all_previous_metrics.avg_wallet_detection = c.wallet_detection
-            all_previous_metrics.avg_replaced_crypto_addresses = c.replaced_crypto_addresses
-            all_previous_metrics.avg_hook_provider = c.hook_provider
+            all_previous_metrics.crypto.avg_crypto_addresses = c.crypto.crypto_addresses
+            all_previous_metrics.crypto.avg_cryptocurrency_name = c.crypto.cryptocurrency_name
+            all_previous_metrics.crypto.avg_wallet_detection = c.crypto.wallet_detection
+            all_previous_metrics.crypto.avg_replaced_crypto_addresses = c.crypto.replaced_crypto_addresses
+            all_previous_metrics.crypto.avg_hook_provider = c.crypto.hook_provider
             
-            all_previous_metrics.avg_npm_maintainers = c.npm_maintainers
+            all_previous_metrics.account.avg_npm_maintainers = c.account.npm_maintainers
             
-            all_previous_metrics.avg_total_files = c.total_files
-            all_previous_metrics.avg_total_size_bytes = c.total_size_bytes
-            all_previous_metrics.avg_total_size_chars = c.total_size_chars
-            all_previous_metrics.weighted_avg_blank_space_and_character_ratio = c.weighted_avg_blank_space_and_character_ratio
-            all_previous_metrics.weighted_avg_shannon_entropy = c.weighted_avg_shannon_entropy
-            all_previous_metrics.avg_longest_line_length = c.longest_line_length
+            all_previous_metrics.generic.avg_total_files = c.generic.total_files
+            all_previous_metrics.generic.avg_total_size_bytes = c.generic.total_size_bytes
+            all_previous_metrics.generic.avg_total_size_chars = c.generic.total_size_chars
+            all_previous_metrics.generic.weighted_avg_blank_space_and_character_ratio = c.generic.weighted_avg_blank_space_and_character_ratio
+            all_previous_metrics.generic.weighted_avg_shannon_entropy = c.generic.weighted_avg_shannon_entropy
+            all_previous_metrics.generic.avg_longest_line_length = c.generic.longest_line_length
             
             return all_previous_metrics
 
@@ -118,30 +118,30 @@ class AggregateMetricsByTag:
 
         all_previous_metrics.versions = f"all up to {last_version} (included) + {c.version} (included)"
 
-        all_previous_metrics.avg_obfuscation_patterns_count = all_previous_metrics.avg_obfuscation_patterns_count + (c.obfuscation_patterns_count - all_previous_metrics.avg_obfuscation_patterns_count) / (n + 1)
-        all_previous_metrics.avg_platform_detections_count = all_previous_metrics.avg_platform_detections_count + (c.platform_detections_count - all_previous_metrics.avg_platform_detections_count) / (n + 1)
+        all_previous_metrics.evasion.avg_obfuscation_patterns_count = all_previous_metrics.evasion.avg_obfuscation_patterns_count + (c.evasion.obfuscation_patterns_count - all_previous_metrics.evasion.avg_obfuscation_patterns_count) / (n + 1)
+        all_previous_metrics.evasion.avg_platform_detections_count = all_previous_metrics.evasion.avg_platform_detections_count + (c.evasion.platform_detections_count - all_previous_metrics.evasion.avg_platform_detections_count) / (n + 1)
 
-        all_previous_metrics.avg_timing_delays_count = all_previous_metrics.avg_timing_delays_count + (c.timing_delays_count - all_previous_metrics.avg_timing_delays_count) / (n + 1)
-        all_previous_metrics.avg_eval_count = all_previous_metrics.avg_eval_count + (c.eval_count - all_previous_metrics.avg_eval_count) / (n + 1)
-        all_previous_metrics.avg_shell_commands_count = all_previous_metrics.avg_shell_commands_count + (c.shell_commands_count - all_previous_metrics.avg_shell_commands_count) / (n + 1)
+        all_previous_metrics.payload.avg_timing_delays_count = all_previous_metrics.payload.avg_timing_delays_count + (c.payload.timing_delays_count - all_previous_metrics.payload.avg_timing_delays_count) / (n + 1)
+        all_previous_metrics.payload.avg_eval_count = all_previous_metrics.payload.avg_eval_count + (c.payload.eval_count - all_previous_metrics.payload.avg_eval_count) / (n + 1)
+        all_previous_metrics.payload.avg_shell_commands_count = all_previous_metrics.payload.avg_shell_commands_count + (c.payload.shell_commands_count - all_previous_metrics.payload.avg_shell_commands_count) / (n + 1)
 
-        all_previous_metrics.avg_scan_functions_count = all_previous_metrics.avg_scan_functions_count + (c.scan_functions_count - all_previous_metrics.avg_scan_functions_count) / (n + 1)
-        all_previous_metrics.avg_sensitive_elements_count = all_previous_metrics.avg_sensitive_elements_count + (c.sensitive_elements_count - all_previous_metrics.avg_sensitive_elements_count) / (n + 1)
-        all_previous_metrics.avg_data_transmission_count = all_previous_metrics.avg_data_transmission_count + (c.data_transmission_count - all_previous_metrics.avg_data_transmission_count) / (n + 1)
+        all_previous_metrics.exfiltration.avg_scan_functions_count = all_previous_metrics.exfiltration.avg_scan_functions_count + (c.exfiltration.scan_functions_count - all_previous_metrics.exfiltration.avg_scan_functions_count) / (n + 1)
+        all_previous_metrics.exfiltration.avg_sensitive_elements_count = all_previous_metrics.exfiltration.avg_sensitive_elements_count + (c.exfiltration.sensitive_elements_count - all_previous_metrics.exfiltration.avg_sensitive_elements_count) / (n + 1)
+        all_previous_metrics.exfiltration.avg_data_transmission_count = all_previous_metrics.exfiltration.avg_data_transmission_count + (c.exfiltration.data_transmission_count - all_previous_metrics.exfiltration.avg_data_transmission_count) / (n + 1)
         
-        all_previous_metrics.avg_crypto_addresses = all_previous_metrics.avg_crypto_addresses + (c.crypto_addresses - all_previous_metrics.avg_crypto_addresses) / (n + 1)
-        all_previous_metrics.avg_cryptocurrency_name = all_previous_metrics.avg_cryptocurrency_name + (c.cryptocurrency_name - all_previous_metrics.avg_cryptocurrency_name) / (n + 1)
-        all_previous_metrics.avg_wallet_detection = all_previous_metrics.avg_wallet_detection + (c.wallet_detection - all_previous_metrics.avg_wallet_detection) / (n + 1)
-        all_previous_metrics.avg_replaced_crypto_addresses = all_previous_metrics.avg_replaced_crypto_addresses + (c.replaced_crypto_addresses - all_previous_metrics.avg_replaced_crypto_addresses) / (n + 1)
-        all_previous_metrics.avg_hook_provider = all_previous_metrics.avg_hook_provider + (c.hook_provider - all_previous_metrics.avg_hook_provider) / (n + 1)
+        all_previous_metrics.crypto.avg_crypto_addresses = all_previous_metrics.crypto.avg_crypto_addresses + (c.crypto.crypto_addresses - all_previous_metrics.crypto.avg_crypto_addresses) / (n + 1)
+        all_previous_metrics.crypto.avg_cryptocurrency_name = all_previous_metrics.crypto.avg_cryptocurrency_name + (c.crypto.cryptocurrency_name - all_previous_metrics.crypto.avg_cryptocurrency_name) / (n + 1)
+        all_previous_metrics.crypto.avg_wallet_detection = all_previous_metrics.crypto.avg_wallet_detection + (c.crypto.wallet_detection - all_previous_metrics.crypto.avg_wallet_detection) / (n + 1)
+        all_previous_metrics.crypto.avg_replaced_crypto_addresses = all_previous_metrics.crypto.avg_replaced_crypto_addresses + (c.crypto.replaced_crypto_addresses - all_previous_metrics.crypto.avg_replaced_crypto_addresses) / (n + 1)
+        all_previous_metrics.crypto.avg_hook_provider = all_previous_metrics.crypto.avg_hook_provider + (c.crypto.hook_provider - all_previous_metrics.crypto.avg_hook_provider) / (n + 1)
 
-        all_previous_metrics.avg_npm_maintainers = all_previous_metrics.avg_npm_maintainers + (c.npm_maintainers - all_previous_metrics.avg_npm_maintainers) / (n + 1)
+        all_previous_metrics.account.avg_npm_maintainers = all_previous_metrics.account.avg_npm_maintainers + (c.account.npm_maintainers - all_previous_metrics.account.avg_npm_maintainers) / (n + 1)
         
-        all_previous_metrics.avg_total_files = all_previous_metrics.avg_total_files + (c.total_files - all_previous_metrics.avg_total_files) / (n + 1)
-        all_previous_metrics.avg_total_size_chars = all_previous_metrics.avg_total_size_chars + (c.total_size_chars - all_previous_metrics.avg_total_size_chars) / (n + 1)
-        all_previous_metrics.avg_total_size_bytes = all_previous_metrics.avg_total_size_bytes + (c.total_size_bytes - all_previous_metrics.avg_total_size_bytes) / (n + 1)
-        all_previous_metrics.weighted_avg_blank_space_and_character_ratio = all_previous_metrics.weighted_avg_blank_space_and_character_ratio + (c.weighted_avg_blank_space_and_character_ratio - all_previous_metrics.weighted_avg_blank_space_and_character_ratio) / (n + 1)
-        all_previous_metrics.avg_longest_line_length = all_previous_metrics.avg_longest_line_length + (c.longest_line_length - all_previous_metrics.avg_longest_line_length) / (n + 1)
-        all_previous_metrics.weighted_avg_shannon_entropy = all_previous_metrics.weighted_avg_shannon_entropy + (c.weighted_avg_shannon_entropy - all_previous_metrics.weighted_avg_shannon_entropy) / (n + 1)
+        all_previous_metrics.generic.avg_total_files = all_previous_metrics.generic.avg_total_files + (c.generic.total_files - all_previous_metrics.generic.avg_total_files) / (n + 1)
+        all_previous_metrics.generic.avg_total_size_chars = all_previous_metrics.generic.avg_total_size_chars + (c.generic.total_size_chars - all_previous_metrics.generic.avg_total_size_chars) / (n + 1)
+        all_previous_metrics.generic.avg_total_size_bytes = all_previous_metrics.generic.avg_total_size_bytes + (c.generic.total_size_bytes - all_previous_metrics.generic.avg_total_size_bytes) / (n + 1)
+        all_previous_metrics.generic.weighted_avg_blank_space_and_character_ratio = all_previous_metrics.generic.weighted_avg_blank_space_and_character_ratio + (c.generic.weighted_avg_blank_space_and_character_ratio - all_previous_metrics.generic.weighted_avg_blank_space_and_character_ratio) / (n + 1)
+        all_previous_metrics.generic.avg_longest_line_length = all_previous_metrics.generic.avg_longest_line_length + (c.generic.longest_line_length - all_previous_metrics.generic.avg_longest_line_length) / (n + 1)
+        all_previous_metrics.generic.weighted_avg_shannon_entropy = all_previous_metrics.generic.weighted_avg_shannon_entropy + (c.generic.weighted_avg_shannon_entropy - all_previous_metrics.generic.weighted_avg_shannon_entropy) / (n + 1)
 
         return all_previous_metrics

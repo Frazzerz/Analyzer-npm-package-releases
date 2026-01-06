@@ -134,11 +134,16 @@ class NPMClient:
         """Download the tarball for 50 lastest versions of the package from NPM registry"""
         data = self.get_npm_package_data()
         if not data or 'versions' not in data:
-            print(f"No version data found for {self.pkg_name}")
+            synchronized_print(f"No version data found for {self.pkg_name}")
             return None
         
-        synchronized_print(f"Found {len(data['versions'])} versions for {self.pkg_name}, but i consider only the last 50")
-        versions = list(data['versions'].keys())[-50:] # Get the last 50 versions
+        if len(data['versions']) == 0:
+            synchronized_print(f"No versions found for {self.pkg_name}")
+            return None
+        
+        if len(data['versions']) > 50:
+            synchronized_print(f"Found {len(data['versions'])} versions for {self.pkg_name}, but i consider only the last 50")
+        versions = list(data['versions'].keys())[-50:] # Get the last 50 versions, if more exist. No error if less. Assuming they are in order
 
         pkg_dir = download_dir / self.pkg_name.replace('/', '_')
         pkg_dir.mkdir(parents=True, exist_ok=True)

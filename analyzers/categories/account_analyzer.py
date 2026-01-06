@@ -39,7 +39,7 @@ class AccountAnalyzer:
             #'github_contributors_nicks': [],
             #'github_contributors_emails': [],
             'npm_hash_commit': '',
-            'github_hash_commit': '',
+            #'github_hash_commit': '',
             'npm_release_date': AccountAnalyzer.UTC_MIN_DATETIME,        # missing date, empty metrics
             #'github_release_date': AccountAnalyzer.UTC_MIN_DATETIME,    # missing date, empty metrics
         }

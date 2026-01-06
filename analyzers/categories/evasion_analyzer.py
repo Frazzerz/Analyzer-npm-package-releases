@@ -2,7 +2,9 @@ import re
 from typing import Dict, List, Pattern
 from utils import UtilsForAnalyzer
 import jsbeautifier
-
+from models.domains import EvasionMetrics
+from models import CodeType
+from utils import synchronized_print
 class EvasionAnalyzer:
     """Analyze evasion techniques"""
 
@@ -37,7 +39,10 @@ class EvasionAnalyzer:
         # (?:...) non-capturing group, best performance, do not allocate memory to capture the group
     ]
 
-    def analyze(self, content: str, package_info: Dict) -> Dict:
+    def analyze(self, content: str, package_info: Dict) -> EvasionMetrics:
+
+        evasion = EvasionMetrics()
+        '''
         metrics = {
             'code_type': 'None',
             'obfuscation_patterns_count': 0,
@@ -46,27 +51,36 @@ class EvasionAnalyzer:
             'platform_detections_count': 0,
             'list_platform_detections': []
         }
-
+        '''
         if not content:
-            return metrics
+            #return metrics
+            return evasion
         
         if self._detect_minified_code(package_info['file_name']):
-            print(f"Minified code detected: {package_info['file_name']}")
-            code_type = 'Minified'
+            #synchronized_print(f"Minified code detected: {package_info['file_name']}")
+            evasion.code_type = CodeType.MINIFIED
+            #code_type = 'Minified'
             content = self.unminify_code(content)
-            print("Code unminified")
+            #synchronized_print("Code unminified")
 
-        metrics['obfuscation_patterns_count'], metrics['list_obfuscation_patterns'] = UtilsForAnalyzer.detect_patterns(content, self.OBFUSCATION_PATTERNS)
-        metrics['platform_detections_count'], metrics['list_platform_detections'] = UtilsForAnalyzer.detect_patterns(content, self.PLATFORM_PATTERNS)
-        
-        if (package_info['info'] == 'deobfuscated'):
-            code_type = 'Deobfuscated'
-        elif (self._detect_obfuscated_code(metrics['obfuscation_patterns_count'], metrics['longest_line_length'])):
-            code_type = 'Obfuscated'
+        #metrics['obfuscation_patterns_count'], metrics['list_obfuscation_patterns'] = UtilsForAnalyzer.detect_patterns(content, self.OBFUSCATION_PATTERNS)
+        #metrics['platform_detections_count'], metrics['list_platform_detections'] = UtilsForAnalyzer.detect_patterns(content, self.PLATFORM_PATTERNS)
+        evasion.obfuscation_patterns_count, evasion.list_obfuscation_patterns = UtilsForAnalyzer.detect_patterns(content, self.OBFUSCATION_PATTERNS)
+        evasion.platform_detections_count, evasion.list_platform_detections = UtilsForAnalyzer.detect_patterns(content, self.PLATFORM_PATTERNS)
+
+        if (package_info['info'] == CodeType.DEOBFUSCATED):
+            #code_type = 'Deobfuscated'
+            evasion.code_type = CodeType.DEOBFUSCATED
+        #elif (self._detect_obfuscated_code(metrics['obfuscation_patterns_count'], metrics['longest_line_length'])):
+        elif (self._detect_obfuscated_code(evasion.obfuscation_patterns_count, max(len(r) for r in content.splitlines() ) if content.splitlines() else 0 )):
+            evasion.code_type = CodeType.OBFUSCATED
+        #    code_type = 'Obfuscated'
         else:
-            code_type = 'Clear'
-        metrics['code_type'] = code_type
-        return metrics
+        #    code_type = 'Clear'
+            evasion.code_type = CodeType.CLEAR
+        #metrics['code_type'] = code_type
+        return evasion
+        #return metrics
     
     @staticmethod
     def _detect_obfuscated_code(obfuscation_patterns_count: int, longest_line_length: int) -> bool:

@@ -1,28 +1,39 @@
 from typing import Dict
 import math
+from models.domains import GenericMetrics
 from utils import synchronized_print
 
 class GenericAnalyzer:
     """Obtain generic metrics from files"""
 
-    def analyze(self, content: str) -> Dict:
+    def analyze(self, content: str) -> GenericMetrics:
+
+        generic = GenericMetrics()
+        '''
         metrics = {
             'file_size_bytes': len(content.encode("utf-8")),
             'file_size_chars': len(content),
             'blank_space_and_character_ratio': 0.0,
             'shannon_entropy': 0.0,
         }
+        '''
 
         if not content:
-            return metrics
-
+            return generic
+        
+        generic.size_bytes = len(content.encode("utf-8"))
+        generic.size_chars = len(content)
         whitespace_count = sum(1 for c in content if c.isspace())
-        metrics['blank_space_and_character_ratio'] = whitespace_count / metrics['file_size_chars'] if content else 0.0
-        metrics['shannon_entropy'] = self._calculate_shannon_entropy(content)
-        #no_empty_lines = len([r for r in content.splitlines() if r.strip()])
+        #metrics['blank_space_and_character_ratio'] = whitespace_count / metrics['file_size_chars'] if content else 0.0
+        #metrics['shannon_entropy'] = self._calculate_shannon_entropy(content)
+        generic.blank_space_and_character_ratio = whitespace_count / generic.size_chars if content else 0.0
+        generic.shannon_entropy = self._calculate_shannon_entropy(content)
+        ##no_empty_lines = len([r for r in content.splitlines() if r.strip()])
 
-        return metrics
-    
+        generic.longest_line_length = max(len(r) for r in content.splitlines()) if content.splitlines() else 0
+        #return metrics
+        return generic
+
     def _calculate_shannon_entropy(self, content: str) -> float:
         """Calculate Shannon entropy of the content"""
         if not content:
