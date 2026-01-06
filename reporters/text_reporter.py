@@ -34,7 +34,7 @@ class TextReporter:
                 bullets.append(f"{base}\n{detail}")
 
             if bullets:
-                f.write(f"Version: {flag.version}\n")
+                f.write(f"Version: {flag.version}. Find {len(bullets)} flags\n")
                 f.write("\n".join(bullets))
                 f.write("\n\n")
 
