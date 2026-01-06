@@ -37,7 +37,7 @@ def synchronized_print(*args, target: OutputTarget = OutputTarget.BOTH, **kwargs
     """Atomic and synchronized print to avoid mixing output between processes
     Writes to both terminal AND current stdout (which may be redirected to a buffer
     E.g.:
-        synchronized_print("Hello")  # Prints to both (default)
+        synchronized_print("Hello")             # Prints to both (default)
         synchronized_print("Debug info", target=OutputTarget.TERMINAL_ONLY)
         synchronized_print("Log entry", target=OutputTarget.FILE_ONLY)
     """

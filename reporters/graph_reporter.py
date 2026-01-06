@@ -23,13 +23,19 @@ class GraphReporter:
         version_metric_cols = set()
         aggregate_metric_cols = set()
 
+        # Extract column names from GraphLabel structure
         for category in GraphLabel.METRICS.values():
-            for vm_key, (avg_key, _) in category["metrics"].items():
-                version_metric_cols.add(vm_key)
-                aggregate_metric_cols.add(avg_key)
+            for metric_tuple in category["metrics"].values():
+                version_col, aggregate_col, _ = metric_tuple
+                version_metric_cols.add(version_col)
+                aggregate_metric_cols.add(aggregate_col)
 
-        df = pd.read_csv(metrics_file,usecols=["version", *version_metric_cols])
-        df_history = pd.read_csv(history_file,usecols=list(aggregate_metric_cols))
+        try:
+            df = pd.read_csv(metrics_file, usecols=["version", *version_metric_cols])
+            df_history = pd.read_csv(history_file, usecols=list(aggregate_metric_cols))
+        except Exception as e:
+            print(f"Error reading CSV files for {package_name}: {e}")
+            return
 
         if df.empty and df_history.empty:
             print(f"No metrics to plot for {package_name}")
@@ -40,10 +46,15 @@ class GraphReporter:
 
         # generate graphs
         for category in GraphLabel.METRICS.values():
-            for metric_key, (metric_key_hist, label) in category["metrics"].items():
+            for metric_key, metric_tuple in category["metrics"].items():
+                version_col, aggregate_col, label = metric_tuple
 
-                values = (df[metric_key].tolist())
-                history_values = (df_history[metric_key_hist].tolist())
+                try:
+                    values = df[version_col].tolist()
+                    history_values = df_history[aggregate_col].tolist()
+                except KeyError as e:
+                    print(f"Warning: Column {e} not found in CSV for {package_name}")
+                    continue
 
                 # plot
                 plt.figure(figsize=(10, 5))
@@ -69,17 +80,19 @@ class GraphReporter:
                 plt.title(f"{label} - {package_name}")
                 plt.xlabel("Version")
                 plt.ylabel(label)
+                
                 # set x axis to have a maximum of 12 ticks
                 if len(versions) > 12:
                     ax = plt.gca()
                     ax.xaxis.set_major_locator(MaxNLocator(nbins=12))
+                
                 plt.xticks(rotation=45)
                 plt.grid(True)
                 plt.legend()
                 plt.tight_layout()
 
-                output_path = graphs_dir / f"{metric_key}.png"
+                # Use metric_key (without dots) for filename
+                safe_filename = metric_key.replace('.', '_')
+                output_path = graphs_dir / f"{safe_filename}.png"
                 plt.savefig(output_path)
                 plt.close()
-        
-        #print(f"Generated graphs for {package_name} in {graphs_dir}")

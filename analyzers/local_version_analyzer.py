@@ -7,7 +7,7 @@ from typing import List, Dict, Optional
 from models import VersionEntry
 from packaging.version import Version
 from utils.logging_utils import OutputTarget
-
+from models import SourceType
 class LocalVersionAnalyzer:
     """Manages loading and extracting local versions"""
     def __init__(self, local_versions_dir: str = "./other_versions", pkg_name: str = ""):
@@ -150,13 +150,13 @@ class LocalVersionAnalyzer:
                 for i, entry in enumerate(entries):
                     # If the version in the entry is newer than the local version
                     if self.compare_versions(entry.name, l_name) > 0:
-                        entries.insert(i, VersionEntry(name=l_name, source="local", ref=l_path))
+                        entries.insert(i, VersionEntry(name=l_name, source=SourceType.LOCAL, ref=l_path))
                         inserted = True
                         break
                 
                 # It is the most recent version, I add it at the end
                 if not inserted:
-                    entries.append(VersionEntry(name=l_name, source="local", ref=l_path))
+                    entries.append(VersionEntry(name=l_name, source=SourceType.LOCAL, ref=l_path))
 
         return entries
         # I can't use packaging.version here because some versions have a suffix that makes them invalid e.g. 2.1.0-candidate

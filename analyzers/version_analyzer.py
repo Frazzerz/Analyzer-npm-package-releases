@@ -2,14 +2,12 @@ from pathlib import Path
 from typing import List
 import multiprocessing as mp
 from models.composed_metrics import FileMetrics, VersionMetrics, AggregateVersionMetrics
-from reporters import CSVReporter
+from reporters import CSVReporter, TextReporter
 from utils import FileHandler, synchronized_print, Deobfuscator
-from utils.logging_utils import OutputTarget
 from .aggregate_metrics_by_tag import AggregateMetricsByTag
 from .code_analyzer import CodeAnalyzer
 from comparators import VersionComparator
-from models import CodeType
-
+from models import CodeType, SourceType
 class VersionAnalyzer:
     """Handles analysis of versions from a Git repository and local versions"""
     def __init__(self, max_processes: int = 1, include_local: bool = False, local_versions_dir: str = "./other_versions", package_name: str = "", output_dir: Path = Path(".")):
@@ -37,14 +35,14 @@ class VersionAnalyzer:
         for i, entry in enumerate(self.entries):
             synchronized_print(f"  [{i+1}/{len(self.entries)}] Analyzing tag {entry.name}")
             try:
-                if entry.source == "git":
+                if entry.source == SourceType.GIT:
                     self.repo.git.checkout(entry.ref.name, force=True)
                     repo_path = Path(self.repo.working_tree_dir)
-                if entry.source == "local" or entry.source == "tarball":
+                if entry.source == SourceType.LOCAL or entry.source == SourceType.TARBALL:
                     repo_path = entry.ref / "package"  # entry.ref is the path to the extracted local version
                 
                 # curr_metrics is the list of FileMetrics for all files in the current version
-                # current_metrics e.g. [[FileMetrics(package='example', version='1.0.0', file_path='index.js', ...), FileMetrics(...), ...]
+                # current_metrics e.g. list[FileMetrics(package='example', version='1.0.0', file_path='index.js', ...), FileMetrics(...), ...]
                 curr_metrics = self._analyze_version(entry.name, repo_path, entry.source)
                 
                 # Identify obfuscated JS files and attempt deobfuscation
@@ -53,13 +51,13 @@ class VersionAnalyzer:
                     synchronized_print(f"    Found {len(obfuscated_files)} obfuscated js files, trying to deobfuscate it...")
                     for f in obfuscated_files:
                         succ = Deobfuscator.deobfuscate(
-                            content=FileHandler().read_file(repo_path / f.file_path),
-                            package_name=self.package_name,
-                            version=entry.name,
-                            file_name=f.file_path
+                            path_original_file= repo_path / f.file_path,  # e.g. other_versions/extracted/package_name/version/package/index.js
+                            package_name=self.package_name,               # e.g. package_name
+                            version=entry.name,                           # e.g. version-local
+                            file_name=f.file_path                         # e.g. index.js
                         )
                         if not succ:
-                            synchronized_print(f"    Deobfuscation failed for file: {f.file_path} in version {entry.name}, skipping analysis of this deobfuscated file.", target=OutputTarget.FILE_ONLY)
+                            synchronized_print(f"    Deobfuscation failed for file: {f.file_path} in version {entry.name}, skipping analysis of this deobfuscated file.")
                             continue
                         path_dir = Path('deobfuscated_files') / self.package_name / entry.name
                         path_file = path_dir / f.file_path.replace('.js', '-deobfuscated.js')
@@ -67,7 +65,7 @@ class VersionAnalyzer:
                             file_path=path_file,
                             version=entry.name,
                             package_dir=path_dir,
-                            source="deobfuscated"
+                            source=SourceType.DEOBFUSCATED
                         )
                         curr_metrics.append(deob)
                 
@@ -83,8 +81,6 @@ class VersionAnalyzer:
                     curr_tag_metrics=aggregate_metrics_by_tag,
                     package=self.package_name,
                     version=entry.name
-                    #version_from=last_version,
-                    #version_to=aggregate_metrics_by_tag.version
                 )
 
                 # all_aggregate_metrics_by_tag is all aggregated metrics for all versions analyzed so far (NO last version included)
@@ -103,18 +99,20 @@ class VersionAnalyzer:
                 flags_csv = self.output_dir / "flags.csv"
                 aggregate_metrics_csv = self.output_dir / "aggregate_metrics_by_tag.csv"
                 aggregate_metrics_history_csv = self.output_dir / "aggregate_metrics_history.csv"
+                flags_summary_txt = self.output_dir / f"{self.package_name.replace('/', '_')}_flags_summary.txt"
 
-                CSVReporter().save_csv(all_metrics_csv, curr_metrics)
-                CSVReporter().save_csv(aggregate_metrics_csv, aggregate_metrics_by_tag)
-                CSVReporter().save_csv(aggregate_metrics_history_csv, all_aggregate_metrics_by_tag)
-                CSVReporter().save_csv(flags_csv, flags)
+                CSVReporter.save_csv(all_metrics_csv, curr_metrics)
+                CSVReporter.save_csv(aggregate_metrics_csv, aggregate_metrics_by_tag)
+                CSVReporter.save_csv(aggregate_metrics_history_csv, all_aggregate_metrics_by_tag)
+                CSVReporter.save_csv(flags_csv, flags)
+                TextReporter.generate_report(flags_summary_txt, flags)
 
             except Exception as e:
                 synchronized_print(f"Error analyzing tag {entry.name}: {e}")
 
         return
 
-    def _analyze_version(self, version: str, package_dir: Path, source: str) -> List[FileMetrics]:
+    def _analyze_version(self, version: str, package_dir: Path, source: SourceType) -> List[FileMetrics]:
         """Analyze all files of a specific Git version"""
 
         files = FileHandler().get_all_files(package_dir)
@@ -127,7 +125,7 @@ class VersionAnalyzer:
         valid_results = [r for r in file_results if r is not None]    
         return valid_results
 
-    def _analyze_files_sequential(self, files: List[Path], version: str, package_dir: Path, source: str) -> List[FileMetrics]:
+    def _analyze_files_sequential(self, files: List[Path], version: str, package_dir: Path, source: SourceType) -> List[FileMetrics]:
         """Sequential analysis of files"""
         results = []
         for file_path in files:
@@ -139,7 +137,7 @@ class VersionAnalyzer:
                 results.append(None)
         return results
 
-    def _analyze_files_parallel(self, files: List[Path], version: str, package_dir: Path, source: str) -> List[FileMetrics]:
+    def _analyze_files_parallel(self, files: List[Path], version: str, package_dir: Path, source: SourceType) -> List[FileMetrics]:
         """Parallel analysis of files"""
         # Prepare arguments for each file
         args_list = []
@@ -152,7 +150,7 @@ class VersionAnalyzer:
         
         return results
 
-    def _analyze_single_file_wrapper(self, file_path: Path, version: str, package_dir: Path, source: str) -> FileMetrics:
+    def _analyze_single_file_wrapper(self, file_path: Path, version: str, package_dir: Path, source: SourceType) -> FileMetrics:
         """Wrapper function for parallel execution that handles exceptions"""
         try:
             return self._analyze_single_file(file_path, version, package_dir, source)
@@ -161,11 +159,9 @@ class VersionAnalyzer:
             print(f"Error analyzing {rel_path}: {type(e).__name__}: {e}")
             return None
 
-    def _analyze_single_file(self, file_path: Path, version: str, package_dir: Path, source: str) -> FileMetrics:
+    def _analyze_single_file(self, file_path: Path, version: str, package_dir: Path, source: SourceType) -> FileMetrics:
         """Analyze a single file"""
         rel_path = str(file_path.relative_to(package_dir))
-        content = FileHandler().read_file(file_path)
-
         package_info = {
             'name': self.package_name,
             'version': version,
@@ -173,15 +169,4 @@ class VersionAnalyzer:
             'file_name': rel_path,
             'info': source
         }
-
-        file_metrics = self.code_analyzer.analyze_file(content, package_info)
-        '''
-        metrics = FileMetrics(
-            package=self.package_name,
-            version=version,
-            file_path=rel_path,
-            **file_metrics
-        )
-        return metrics
-        '''
-        return file_metrics
+        return self.code_analyzer.analyze_file(file_path, package_info)

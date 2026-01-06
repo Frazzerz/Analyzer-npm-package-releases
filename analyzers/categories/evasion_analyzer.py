@@ -3,7 +3,7 @@ from typing import Dict, List, Pattern
 from utils import UtilsForAnalyzer
 import jsbeautifier
 from models.domains import EvasionMetrics
-from models import CodeType
+from models import SourceType, CodeType
 from utils import synchronized_print
 class EvasionAnalyzer:
     """Analyze evasion techniques"""
@@ -14,7 +14,6 @@ class EvasionAnalyzer:
         re.compile(r'try\{.*?\}catch\(_?0x[0-9a-fA-F]{6,}\)', re.IGNORECASE),                 # Try-catch blocks with obfuscated vars, e.g. try{...}catch(_0x5f3b1c)
         re.compile(r'const\s+_?0x[0-9a-fA-F]{6,}\s*=\s*_?0x[0-9a-fA-F]{6,}', re.IGNORECASE),  # Constant assignments with obfuscated names, e.g. const _0x5f3b1c = _0x5f3b1d 
         re.compile(r'_?0x[0-9a-fA-F]{6,}\(_?0x[0-9a-fA-F]{6,}'),                              # Function calls with hex parameters, e.g. _0x5f3b1c(0x58e7a2
-        # 3281-12-8-38-17
         # \s for spaces
         # + at least one
         # * zero or more
@@ -40,47 +39,26 @@ class EvasionAnalyzer:
     ]
 
     def analyze(self, content: str, package_info: Dict) -> EvasionMetrics:
-
         evasion = EvasionMetrics()
-        '''
-        metrics = {
-            'code_type': 'None',
-            'obfuscation_patterns_count': 0,
-            'list_obfuscation_patterns': [],
-            'longest_line_length': max(len(r) for r in content.splitlines()) if content.splitlines() else 0,
-            'platform_detections_count': 0,
-            'list_platform_detections': []
-        }
-        '''
         if not content:
-            #return metrics
             return evasion
         
         if self._detect_minified_code(package_info['file_name']):
             #synchronized_print(f"Minified code detected: {package_info['file_name']}")
             evasion.code_type = CodeType.MINIFIED
-            #code_type = 'Minified'
             content = self.unminify_code(content)
             #synchronized_print("Code unminified")
 
-        #metrics['obfuscation_patterns_count'], metrics['list_obfuscation_patterns'] = UtilsForAnalyzer.detect_patterns(content, self.OBFUSCATION_PATTERNS)
-        #metrics['platform_detections_count'], metrics['list_platform_detections'] = UtilsForAnalyzer.detect_patterns(content, self.PLATFORM_PATTERNS)
         evasion.obfuscation_patterns_count, evasion.list_obfuscation_patterns = UtilsForAnalyzer.detect_patterns(content, self.OBFUSCATION_PATTERNS)
         evasion.platform_detections_count, evasion.list_platform_detections = UtilsForAnalyzer.detect_patterns(content, self.PLATFORM_PATTERNS)
 
-        if (package_info['info'] == CodeType.DEOBFUSCATED):
-            #code_type = 'Deobfuscated'
+        if package_info['info'] == SourceType.DEOBFUSCATED:
             evasion.code_type = CodeType.DEOBFUSCATED
-        #elif (self._detect_obfuscated_code(metrics['obfuscation_patterns_count'], metrics['longest_line_length'])):
         elif (self._detect_obfuscated_code(evasion.obfuscation_patterns_count, max(len(r) for r in content.splitlines() ) if content.splitlines() else 0 )):
             evasion.code_type = CodeType.OBFUSCATED
-        #    code_type = 'Obfuscated'
         else:
-        #    code_type = 'Clear'
             evasion.code_type = CodeType.CLEAR
-        #metrics['code_type'] = code_type
         return evasion
-        #return metrics
     
     @staticmethod
     def _detect_obfuscated_code(obfuscation_patterns_count: int, longest_line_length: int) -> bool:
@@ -91,8 +69,6 @@ class EvasionAnalyzer:
     @staticmethod
     def _detect_minified_code(file_name: str) -> bool:
         """Detect if code is minified"""
-        # Simple heuristic checks for minification
-        #return blank_space_and_character_ratio < 0.03 and no_empty_lines < 3 and longest_line_length > 100        # Thresholds for minification detection
         return file_name.endswith('.min.js')
 
     def unminify_code(self, content: str) -> str:

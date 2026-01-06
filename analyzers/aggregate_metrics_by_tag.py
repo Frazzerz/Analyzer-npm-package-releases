@@ -3,11 +3,12 @@ from models.composed_metrics import FileMetrics, VersionMetrics, AggregateVersio
 from typing import List
 from analyzers.categories import AccountAnalyzer
 from utils import synchronized_print
+from models import CodeType, SourceType
 
 class AggregateMetricsByTag:
 
     @staticmethod
-    def aggregate_metrics_by_tag(metrics_list: List[FileMetrics], repo_path: Path, source: str) -> VersionMetrics:
+    def aggregate_metrics_by_tag(metrics_list: List[FileMetrics], repo_path: Path, source: SourceType) -> VersionMetrics:
         """Aggregation of all metrics from the all files in the current version into a single VersionMetrics object"""
 
         if not metrics_list:
@@ -23,15 +24,15 @@ class AggregateMetricsByTag:
         # Calculate metrics for account categories
         account = AccountAnalyzer(pkg_name=version_metrics.package)
         account_metrics = account.analyze(version_metrics.version, repo_path, source)
-        version_metrics.account.npm_maintainers = account_metrics.get('npm_maintainers')
-        version_metrics.account.npm_hash_commit = account_metrics.get('npm_hash_commit')
-        #version_metrics.account.github_hash_commit = account_metrics.get('github_hash_commit')
-        version_metrics.account.npm_release_date = account_metrics.get('npm_release_date')
+        version_metrics.account.npm_maintainers = account_metrics.npm_maintainers
+        version_metrics.account.npm_hash_commit = account_metrics.npm_hash_commit
+        #version_metrics.account.github_hash_commit = account_metrics.github_hash_commit
+        version_metrics.account.npm_release_date = account_metrics.npm_release_date
     
         # Calculate total file sizes for weighted averages
         for fm in metrics_list:
                 # Filter for deobfuscated files, I don't consider the deobfuscated files for these metrics below
-                if fm.evasion.code_type != "Deobfuscated":
+                if fm.evasion.code_type != CodeType.DEOBFUSCATED:
                     version_metrics.generic.total_size_chars += fm.generic.size_chars
                     version_metrics.evasion.code_types.append(fm.evasion.code_type)
                     version_metrics.generic.total_files += 1
@@ -59,7 +60,7 @@ class AggregateMetricsByTag:
             version_metrics.crypto.hook_provider += fm.crypto.hook_provider
             
             # weighted averages
-            if fm.evasion.code_type != "Deobfuscated":
+            if fm.evasion.code_type != CodeType.DEOBFUSCATED:
                 # To calculate the average blank space ratio for the version, we need to calculate the weighted average based on character size,
                 # so a larger file will have a larger weight on average
                 version_metrics.generic.weighted_avg_blank_space_and_character_ratio += fm.generic.blank_space_and_character_ratio * fm.generic.size_chars / version_metrics.generic.total_size_chars if version_metrics.generic.total_size_chars > 0 else 0.0

@@ -1,7 +1,8 @@
+from pathlib import Path
 from typing import Dict
 from .categories import EvasionAnalyzer, PayloadAnalyzer, DataExfiltrationAnalyzer, CryptojackingAnalyzer, GenericAnalyzer
 from models.composed_metrics import FileMetrics
-from utils import synchronized_print
+from utils import FileHandler, synchronized_print
 class CodeAnalyzer:
     """Coordinates analysis across all categories"""
     
@@ -12,13 +13,14 @@ class CodeAnalyzer:
         self.data_exfiltration_analyzer = DataExfiltrationAnalyzer()
         self.cryptojacking_analyzer = CryptojackingAnalyzer()
 
-    def analyze_file(self, content: str, package_info: Dict) -> FileMetrics:
+    def analyze_file(self, file_path: Path, package_info: Dict) -> FileMetrics:
         """Analyze a single file and return all metrics"""
         metrics = FileMetrics(
             package=package_info['name'],
             version=package_info['version'],
             file_path=package_info['file_name'],
         )
+        content = FileHandler().read_file(file_path)
         metrics.generic = self.generic_analyzer.analyze(content)
         metrics.evasion = self.evasion_analyzer.analyze(content, package_info)
         metrics.payload = self.payload_analyzer.analyze(content, package_info)

@@ -13,17 +13,18 @@ def analyze_single_package(package, out_dir, package_index, total_packages, incl
 
     start_time = time.time()
     print(f"[{package_index}/{total_packages}] Analyzing {package}...")
-
     analyzer = PackageAnalyzer(include_local=include_local, local_versions_dir=local_dir, workers=workers, package_name=package, output_dir=pkg_dir)
+
+    txt_flags_summary_path = pkg_dir / f"{package.replace('/', '_')}_flags_summary.txt"
+    TextReporter.initialize_report(txt_flags_summary_path, package)
 
     # Capture the output of analyze_package
     output_buffer = StringIO()
     with contextlib.redirect_stdout(output_buffer):
         analyzer.analyze_package()
 
-    # Text reports and graph
     TextReporter().generate_log_txt(pkg_dir, package, output_buffer)
-    TextReporter().generate_compact_report(pkg_dir, package)
+    TextReporter().finish_report(txt_flags_summary_path)
     GraphReporter().generate_graphs(pkg_dir, package)
     #FileHandler().delete_tarballs(package)
 

@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Pattern
+from typing import List, Pattern
 from utils import UtilsForAnalyzer
 from models.domains import ExfiltrationMetrics
 from utils import synchronized_print
@@ -31,7 +31,6 @@ class DataExfiltrationAnalyzer:
         
         # Hostname, Userinfo, Ssh, Aws, Secret, Access, Token, Database, Google, API Key, Env, Username, Email, Password, Passphrase
         # No more Client Auth Private env
-        # 10033 e 15969
         #re.compile(r'\w*[._-]?(?:host[-_]?name|userinfo|(?:ssh|aws|secret|access|token)s?|database|google|api[-_]?keys?usernames?|[e]?[-]?mails?|(?:pass(word|phrase))s?)[._-]?\w*', re.IGNORECASE),
         
         # [] indicate character set
@@ -59,24 +58,9 @@ class DataExfiltrationAnalyzer:
 
     def analyze(self, content: str) -> ExfiltrationMetrics:
         exfiltration = ExfiltrationMetrics()
-        '''
-        metrics = {
-            'scan_functions_count': 0,
-            'list_scan_functions': [],
-            'sensitive_elements_count': 0,
-            'list_sensitive_elements': [],
-            'data_transmission_count': 0,
-            'list_data_transmission': [],
-        }
-        '''
         if not content:
             return exfiltration
-        '''
-        metrics['scan_functions_count'],  metrics['list_scan_functions'] = UtilsForAnalyzer.detect_patterns(content, self.SCAN_FUNCTIONS_PATTERNS)
-        metrics['sensitive_elements_count'], metrics['list_sensitive_elements'] = UtilsForAnalyzer.detect_patterns(content, self.SCANNED_ELEMENTS_PATTERNS)
-        metrics['data_transmission_count'], metrics['list_data_transmission'] = UtilsForAnalyzer.detect_patterns(content, self.DATA_TRANSMISSION_PATTERNS)
-        return metrics
-        '''
+
         exfiltration.scan_functions_count,  exfiltration.list_scan_functions = UtilsForAnalyzer.detect_patterns(content, self.SCAN_FUNCTIONS_PATTERNS)
         exfiltration.sensitive_elements_count, exfiltration.list_sensitive_elements = UtilsForAnalyzer.detect_patterns(content, self.SCANNED_ELEMENTS_PATTERNS)
         exfiltration.data_transmission_count, exfiltration.list_data_transmissions = UtilsForAnalyzer.detect_patterns(content, self.DATA_TRANSMISSION_PATTERNS)

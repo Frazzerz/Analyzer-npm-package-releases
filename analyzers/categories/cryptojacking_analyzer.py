@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Pattern
+from typing import List, Pattern
 from utils import UtilsForAnalyzer
 from models.domains import CryptoMetrics
 from utils import synchronized_print
@@ -78,31 +78,9 @@ class CryptojackingAnalyzer:
 
     def analyze(self, content: str) -> CryptoMetrics:
         crypto = CryptoMetrics()
-        '''
-        metrics = {
-            'crypto_addresses': 0,
-            'list_crypto_addresses': [],
-            'cryptocurrency_name': 0,
-            'wallet_detection': 0,
-            'wallet_detection_list': [],
-            'replaced_crypto_addresses': 0,
-            'replaced_crypto_addresses_list': [],
-            'hook_provider': 0
-        }
-        '''
         if not content:
             return crypto
-        '''
-        metrics['crypto_addresses'], metrics['list_crypto_addresses'] = UtilsForAnalyzer.detect_patterns(content, self.CRYPTO_PATTERNS)
-        metrics['cryptocurrency_name'] = UtilsForAnalyzer.detect_count_patterns(content, self.CRYPTOCURRENCY_NAMES)
-        metrics['wallet_detection'], metrics['wallet_detection_list'] = UtilsForAnalyzer.detect_patterns(content, self.WALLET_DETECTION_PATTERNS)
-        # Mechanism present in the malware considered :
-        #   Intercepts all HTTP responses (fetch/XMLHttpRequest) and replaces the crypto addresses found in the content with those controlled by the attacker
-        # Check presence of cryptocurrency name and .replace function could indicate address substitution
-        metrics['replaced_crypto_addresses'], metrics['replaced_crypto_addresses_list'] = UtilsForAnalyzer.detect_patterns(content, self.REPLACE_CRYPTO_ADDRESS_PATTERN)
-        metrics['hook_provider'] = UtilsForAnalyzer.detect_count_patterns(content, self.HOOK_PROVIDER_PATTERN)
-        return metrics
-        '''
+
         crypto.crypto_addresses, crypto.list_crypto_addresses = UtilsForAnalyzer.detect_patterns(content, self.CRYPTO_PATTERNS)
         crypto.cryptocurrency_name = UtilsForAnalyzer.detect_count_patterns(content, self.CRYPTOCURRENCY_NAMES)
         crypto.wallet_detection, crypto.wallet_detection_list = UtilsForAnalyzer.detect_patterns(content, self.WALLET_DETECTION_PATTERNS)

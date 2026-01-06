@@ -5,7 +5,7 @@ import requests
 import subprocess
 import os
 from .logging_utils import OutputTarget, synchronized_print
-from models import VersionEntry
+from models import VersionEntry, SourceType
 
 class NPMClient:
     """Cloning Git repos associated with a pkg and retrieving ordered tags"""
@@ -199,7 +199,7 @@ class NPMClient:
             with tarfile.open(tarball_path, 'r:gz') as tar:
                 tar.extractall(path=extract_path)
             #synchronized_print(f"Extracted {tarball_path} to {extract_path}")
-            return VersionEntry(name=tarball_path.stem, source="tarball", ref=extract_path)
+            return VersionEntry(name=tarball_path.stem, source=SourceType.TARBALL, ref=extract_path)
         except Exception as e:
             print(f"Error extracting {tarball_path}: {e}")
             return None

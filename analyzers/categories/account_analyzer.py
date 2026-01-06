@@ -5,6 +5,8 @@ from utils import NPMClient
 from datetime import datetime, timezone
 from utils import synchronized_print
 import re
+from models import SourceType
+from models.composed_metrics.aggregate_metrics.account import AccountVersion
 
 class AccountAnalyzer:
     """Analyzes account compromise & release integrity anomalies"""
@@ -29,37 +31,25 @@ class AccountAnalyzer:
         AccountAnalyzer._npm_cache[self.package_name] = npm_data
         return npm_data
     
-    def analyze(self, version: str, git_repo_path: Path, source: str) -> Dict:
-        metrics = {
-            'npm_maintainers': 0,
-            #'npm_maintainers_nicks': [],
-            #'npm_maintainers_emails': [],
-            #'npm_maintainer_published_release': '', #test
-            #'github_contributors': 0,
-            #'github_contributors_nicks': [],
-            #'github_contributors_emails': [],
-            'npm_hash_commit': '',
-            #'github_hash_commit': '',
-            'npm_release_date': AccountAnalyzer.UTC_MIN_DATETIME,        # missing date, empty metrics
-            #'github_release_date': AccountAnalyzer.UTC_MIN_DATETIME,    # missing date, empty metrics
-        }
-
-        if source in ("local", "deobfuscated"):
-            return metrics
+    def analyze(self, version: str, git_repo_path: Path, source: SourceType) -> AccountVersion:
+        account = AccountVersion()
         
+        if source in (SourceType.LOCAL, SourceType.DEOBFUSCATED):
+            return account
+        '''
         # Get GitHub metrics
-        if git_repo_path and source == "git":
+        if git_repo_path and source == SourceType.GIT:
             repo = Repo(str(git_repo_path))
-            '''
+            
             # Take the cotributors from the git repository
-            contributors_names = set()
-            contributors_emails = set()            
-            for commit in repo.iter_commits():
-                if commit.author:
-                    contributors_names.add(commit.author.name)
-                    contributors_emails.add(commit.author.email)
-            return len(contributors_names), list(contributors_names), list(contributors_emails)
-            '''
+            #contributors_names = set()
+            #contributors_emails = set()            
+            #for commit in repo.iter_commits():
+            #    if commit.author:
+            #        contributors_names.add(commit.author.name)
+            #        contributors_emails.add(commit.author.email)
+            #return len(contributors_names), list(contributors_names), list(contributors_emails)
+            
             try:
                 tag = repo.tags[version]
                 #commit = tag.commit
@@ -68,7 +58,7 @@ class AccountAnalyzer:
                 metrics['github_hash_commit'] = tag.commit.hexsha
             except Exception as e:
                 synchronized_print(f"    Error getting GitHub data for version {version}: {e}")
-        
+        '''
         # Get npm metrics
         npm_data = self._get_npm_data_cached()
         
@@ -80,22 +70,21 @@ class AccountAnalyzer:
                 version = self.extract_version(version)
                 if version not in npm_data['versions']:
                     print(f"    NPM data for extracted version {version} still not found, skipping NPM metrics")
-                    return metrics
+                    return account
 
             version_data = npm_data['versions'][version]
             # Get maintainers/owners
             maintainers = version_data.get('maintainers', [])
-            metrics['npm_maintainers'] = len(maintainers)
-            metrics['npm_hash_commit'] = version_data.get('gitHead', "")
+            account.npm_maintainers = len(maintainers)
+            account.npm_hash_commit = version_data.get('gitHead', "")
             if 'time' in npm_data and version in npm_data['time']:
-                metrics['npm_release_date'] = self._parse_date(npm_data['time'][version])
+                account.npm_release_date = self._parse_date(npm_data['time'][version])
             #metrics['npm_maintainers_nicks'] = [maintainer.get('name', '') for maintainer in maintainers if maintainer.get('name')]
             #metrics['npm_maintainers_emails'] = [maintainer.get('email', '') for maintainer in maintainers if maintainer.get('email')] 
             # Get publisher info
             #npm_user = version_data.get('_npmUser', {})
             #metrics['npm_maintainer_published_release'] = npm_user.get('name', '') if npm_user else ''
-            
-        return metrics
+        return account
 
     def _parse_date(self, date_str: str) -> datetime:
         if not date_str:
@@ -121,9 +110,9 @@ class AccountAnalyzer:
     
     def normalize_version(self, version: str) -> str:
         """Normalize version string"""
-        version = version.strip('v')  # Normalize version by removing leading 'v'
-        version = version.replace(self.package_name, '') # Remove package name if present
-        version = version.strip('@')  # Remove leading '@' if present
+        version = version.strip('v')                        # Normalize version by removing leading 'v'
+        version = version.replace(self.package_name, '')    # Remove package name if present
+        version = version.strip('@')                        # Remove leading '@' if present
         '''
         if self.package_name in version:
             version = version.split(self.package_name)[-1]

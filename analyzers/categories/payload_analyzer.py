@@ -17,9 +17,7 @@ class PayloadAnalyzer:
         # ?: Indicates a non-capturing group (returns the entire match, not just the group)
     ]
     
-    EVAL_PATTERNS: List[Pattern] = [
-        re.compile(r'eval\s*\([\s\S]*?\)'),
-    ]
+    EVAL_PATTERNS: List[Pattern] = [re.compile(r'eval\s*\([\s\S]*?\)')]
     
     SHELL_COMMANDS_PATTERNS: List[Pattern] = [
         # obj.exec(command, args)
@@ -39,47 +37,21 @@ class PayloadAnalyzer:
         )
     ]
 
-    PREINSTALL_PATTERNS: List[Pattern] = [
-        re.compile(r'"preinstall"\s*:\s*"[^"]*"\s*,?', re.IGNORECASE),
-        # [^"]*  Any text between quotes
-    ]
-
+    PREINSTALL_PATTERNS: List[Pattern] = [re.compile(r'"preinstall"\s*:\s*"[^"]*"\s*,?', re.IGNORECASE)]    # [^"]*  Any text between quotes
+    
     def analyze(self, content: str, package_info: Dict) -> PayloadMetrics:
-
         payload = PayloadMetrics()
-        '''
-        metrics = {
-            'timing_delays_count': 0,
-            'list_timing_delays': [],
-            'eval_count': 0,
-            'eval_list': [],
-            'shell_commands_count': 0,
-            'list_shell_commands': [],
-            'preinstall_scripts': []
-        }
-        '''
-
         if not content:
             return payload
         
         payload.timing_delays_count, payload.list_timing_delays = UtilsForAnalyzer.detect_patterns(content, self.TIMING_DELAYS_PATTERNS)
         payload.eval_count, payload.eval_list = UtilsForAnalyzer.detect_patterns(content, self.EVAL_PATTERNS)
         payload.shell_commands_count, payload.list_shell_commands = UtilsForAnalyzer.detect_patterns(content, self.SHELL_COMMANDS_PATTERNS)
+
         if(package_info['file_name'] == 'package.json'):
             _, preinstall_scripts = UtilsForAnalyzer.detect_patterns(content, self.PREINSTALL_PATTERNS)
             #Take only the first occurrence, there should be only one preinstall script in package.json
             if preinstall_scripts:
                 payload.preinstall_scripts = [preinstall_scripts[0]]
+        
         return payload
-        '''
-        metrics['timing_delays_count'], metrics['list_timing_delays'] = UtilsForAnalyzer.detect_patterns(content, self.TIMING_DELAYS_PATTERNS)
-        metrics['eval_count'], metrics['eval_list'] = UtilsForAnalyzer.detect_patterns(content, self.EVAL_PATTERNS)
-        metrics['shell_commands_count'], metrics['list_shell_commands'] = UtilsForAnalyzer.detect_patterns(content, self.SHELL_COMMANDS_PATTERNS)
-        if(package_info['file_name'] == 'package.json'):
-            _, preinstall_scripts = UtilsForAnalyzer.detect_patterns(content, self.PREINSTALL_PATTERNS)
-            #Take only the first occurrence, there should be only one preinstall script in package.json
-            if preinstall_scripts:
-                metrics['preinstall_scripts'] = [preinstall_scripts[0]]
-
-        return metrics
-        '''
